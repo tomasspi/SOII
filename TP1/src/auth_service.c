@@ -66,7 +66,7 @@ int main(void)
       switch(check_credentials(input, database))
       {
         case BLOCKED:
-              printf("Bloqueado.\n");
+              printf("Blocked.\n");
               strcpy(buf.msg, "B");
               break;
         case ACTIVE:

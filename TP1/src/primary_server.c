@@ -7,6 +7,7 @@
 #include <sys/msg.h>
 #include <unistd.h>
 #include <sys/socket.h>
+#include <sys/wait.h>
 
 #include "messages.h"
 #include "sockets.h"
@@ -51,14 +52,12 @@ int main(void)
     exit(EXIT_FAILURE);
   }
 
-  printf("ESTOY 1\n");
-
   if ((msqid = msgget(key, 0666 | IPC_CREAT)) == -1)
   {
     perror("msgget");
     exit(EXIT_FAILURE);
   }
-  printf("ESTOY 2\n");
+
   log.mtype = TO_AUTH;
 
   struct sockaddr_in cl_addr;
@@ -79,59 +78,84 @@ int main(void)
 
   close(sockfd);
 
-  while(1)
+  int loginf = 1;
+
+  int auth_id, files_id, auth_state, files_state;
+
+  if((auth_id = fork()) == -1)
   {
-    printf("ESTOY ACA\n");
-    /**< Lectura */
-    rw = recv_cmd(newfd,msg_buf);
-
-    if(rw == -1)
-    {
-      perror("read");
-      exit(EXIT_FAILURE);
-    }
-    printf("%s\n", msg_buf);
-    /**< Fin Lectura */
-
-    /**< Check login. */
-    login(&log, msg_buf);
-
-    msgsnd(msqid, &log, sizeof(log.login), 0);
-
-    msgrcv(msqid, &buf, sizeof(buf.msg), TO_PRIM, 0);
-    /**<End login. */
-
-    /**< Escritura */
-    rw = send_cmd(newfd, buf.msg);
-
-    if(rw == -1)
-    {
-      perror("write");
-      exit(EXIT_FAILURE);
-    }
-    msg_buf[strlen(msg_buf)-1] = '\0';
-    /**< Escritura */
-
-    if(!strcmp("exit",msg_buf))
-    {
-      close(newfd);
-      exit(EXIT_SUCCESS);
-    }
+    perror("fork auth");
+    exit(EXIT_FAILURE);
   }
 
+  char *arga[] = {"./auth", NULL};
+  char *argf[] = {"./files", NULL};
 
-  //
-  // msgrcv(msqid, &buf, sizeof(buf.msg), TO_PRIM, 0);
-  //
-  // printf("Resultado %s\n", buf.msg);
-  //
-  //
-  if (msgctl(msqid, IPC_RMID, NULL) == -1) /* Destruye la cola */
+  if(auth_id == 0) execv(arga[0], arga);
+  else
   {
-    perror("msgctl");
-    exit(1);
-  }
+    if((files_id =  fork()) == -1)
+    {
+      perror("fork files");
+      exit(EXIT_FAILURE);
+    }
 
+    if(files_id == 0) execv(argf[0], argf);
+    else
+    {
+      waitpid(auth_id, &auth_state, WNOHANG);
+      waitpid(files_id, &files_state, WNOHANG);
+
+      while(1)
+      {
+        /**< Lectura */
+        rw = recv_cmd(newfd,msg_buf);
+
+        if(rw == -1)
+        {
+          perror("read");
+          exit(EXIT_FAILURE);
+        }
+        /**< Fin Lectura */
+
+        if(loginf)
+        {
+          /**< Check login. */
+          login(&log, msg_buf);
+
+          msgsnd(msqid, &log, sizeof(log.login), 0);
+
+          msgrcv(msqid, &buf, sizeof(buf.msg), TO_PRIM, 0);
+
+          if(!strcmp(buf.msg,"A")) loginf = 0;
+          /**<End login. */
+        }
+
+        /**< Escritura */
+        rw = send_cmd(newfd, buf.msg);
+
+        if(rw == -1)
+        {
+          perror("write");
+          exit(EXIT_FAILURE);
+        }
+        msg_buf[strlen(msg_buf)-1] = '\0';
+        /**< Escritura */
+
+        if(!strcmp("exit",msg_buf))
+        {
+          close(newfd);
+          exit(EXIT_SUCCESS);
+        }
+      }
+
+      if (msgctl(msqid, IPC_RMID, NULL) == -1) /* Destruye la cola */
+      {
+        perror("msgctl");
+        exit(1);
+      }
+    }
+  }
 
   return EXIT_SUCCESS;
 }
