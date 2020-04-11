@@ -1,0 +1,179 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{siunitx}
+\usepackage{tocbibind} % Bibliografía en el indice
+\usepackage{titlesec} % Posibilidad de editar los formatos de chapter
+\usepackage{amsmath,amssymb,mathrsfs} % Matemáticas varias
+\usepackage{tabularx} % Para las tablas
+\usepackage[title]{appendix} % Para anexos
+\usepackage[spanish]{babel} % Para modificar labels por defecto
+\renewcommand{\baselinestretch}{1} % Interlineado. 1 es estandar
+% --- Arreglos varios para la inclusion de imagenes
+\usepackage{float}
+\usepackage[pdftex]{graphicx}
+\usepackage{subfigure}
+\graphicspath{{/home/mrgreen/Pictures/}}
+\usepackage[usenames,dvipsnames]{color}
+\DeclareGraphicsExtensions{.png,.jpg,.pdf,.mps,.gif,.bmp}
+% --- Para las dimensiones de los márgenes etc
+\frenchspacing \addtolength{\hoffset}{-1.5cm}
+\addtolength{\textwidth}{3cm} \addtolength{\voffset}{-2.5cm}
+\addtolength{\textheight}{4cm}
+% --- Para el encabezado
+\setlength{\headheight}{33pt}
+\usepackage{fancyhdr}
+\fancyhead[R]{\includegraphics[height=1cm]{logo_fcefyn_nuevo.jpg}}\fancyhead[L]{\includegraphics[height=1cm]{unc1_a.jpg}}\fancyhead[C]{} \fancyfoot[C]{Página \thepage} \renewcommand{\footrulewidth}{0.4pt}
+\pagestyle{fancy}
+% --- Para las tablas
+\usepackage{multirow} % Juntar filas
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}} % Justificar Izq
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}} % Justificar Centrar
+\newcolumntype{R}[1]{>{\raggedleft\arraybackslash}p{#1}} % Justificar Der
+\usepackage[numbered]{bookmark} % Para que figure las secciones en el PDF
+\usepackage{listings} % Para poner código
+\usepackage{enumitem} % Para editar las propiedades de los items
+\usepackage{color}
+\usepackage[bottom]{footmisc} % Para las notas al pie de la página
+\lstset{frame=single} % Código en un cuadro
+% --- Para Anexo
+\addto\captionsspanish{%
+  \renewcommand\appendixname{ANEXO}
+  \renewcommand\appendixpagename{ANEXOS}
+}
+% --- Quita los cuadrados de colores en los hipervínculos
+\hypersetup{
+	colorlinks = true,
+	linkcolor  = black,
+	urlcolor   = black,
+    citecolor  = black,
+    anchorcolor = black}
+% -------------------------------------------------------- %
+% Definicion de colores para el codigo
+
+\lstdefinelanguage{XML}
+{
+  basicstyle=\ttfamily\footnotesize,
+  morestring=[b]",
+  moredelim=[s][\bfseries\color{Maroon}]{<}{\ },
+  moredelim=[s][\bfseries\color{Maroon}]{</}{>},
+  moredelim=[l][\bfseries\color{Maroon}]{/>},
+  moredelim=[l][\bfseries\color{Maroon}]{>},
+  morecomment=[s]{<?}{?>},
+  morecomment=[s]{<!--}{-->},
+  commentstyle=\color{DarkOliveGreen},
+  stringstyle=\color{blue},
+  identifierstyle=\color{red}
+}
+
+\lstdefinelanguage{SQL}
+{
+  morekeywords={
+    INSERT,
+    INTO,
+    VALUES
+  },
+  morestring=[b]',
+  breaklines=true,
+  frame=single,
+  basicstyle=\ttfamily,
+  keywordstyle=\color{Blue},
+  commentstyle=\color{Brown},
+  %identifierstyle=\color{red},
+  stringstyle=\ttfamily\color{OliveGreen},
+  backgroundcolor=\color{white}
+}
+
+\lstdefinelanguage{Ce}{
+    backgroundcolor=\color{white},		%color de fondo
+    commentstyle=\color{CadetBlue},		%color de los comentarios
+    keywordstyle=\color{Blue},			%color de las palabras reservadas
+    numberstyle=\tiny\color{Dandelion},	%numero de línea con tamaño y color
+    numbers=left,                    	%posicion de los numeros
+    numbersep=5pt,   					%espaciado entre los numeros
+    stringstyle=\color{OliveGreen},		%color de las strings
+    basicstyle=\ttfamily\footnotesize,	%estilo de fuente
+    breakatwhitespace=false,         	%romper estacios en blanco
+    breaklines=true,                 	%romper lineas
+    frame=single,						%para encuadrar el codigo
+    rulecolor=\color{black},			%color del cuadro
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=2,
+    language=C
+}
+
+\renewcommand{\lstlistingname}{Código}
+
+% -------------------------------------------------------- %
+
+\begin{document}
+
+\begin{titlepage}
+    \begin{center}
+      \vspace*{1cm}
+
+      \vspace{2cm}
+      \includegraphics[width=0.4\textwidth]{unc1_a.jpg}
+      \includegraphics[width=0.4\textwidth]{logo_fcefyn_nuevo.jpg}
+
+      \Huge
+      \textbf{Cátedra de Sistemas Operativos II}
+
+      \vspace{3.5cm}
+
+      \textbf{Trabajo Práctico N\si{\degree} I}
+
+      \vfill
+
+      \vspace{0.8cm}
+
+
+
+      \Large
+      Piñero, Tomás Santiago\\
+      XX de Abril de 2020
+    \end{center}
+\end{titlepage}
+% -------------------------------------------------------- %
+% --- Tabla de contenidos
+
+\setcounter{secnumdepth}{1}
+\setcounter{tocdepth}{5}
+\tableofcontents
+
+% -------------------------------------------------------- %
+
+\newpage
+\renewcommand{\baselinestretch}{1}
+\setlength{\parskip}{0.5em}
+
+\section{Introducción}
+
+\section{Descripción general}
+
+\section{Diseño de solución}
+
+\section{Implementación y resultados}
+
+\section{Conclusiones}
+
+\begin{lstlisting}[caption={Prueba Ce language.}, language=Ce]
+#include<iostream>
+
+using namespace std;
+
+int main()
+{
+	//pueba comentario
+	string test = "hola como va";
+	char c = 'h';
+	int a = 9;
+	cout<<a+5;
+	return 0;
+}
+\end{lstlisting}
+
+\end{document}

@@ -1,0 +1,5 @@
+1,tomas,santiago,activo,10/04/2020 23:20:02
+2,cristobal,arcos,bloqueado,fecha
+3,marcela,valeria,bloqueado,fecha
+4,pablo,ricardo,activo,fecha
+5,tame,impala,activo,07/04/2020 20:18:10
