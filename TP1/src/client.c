@@ -13,15 +13,19 @@
 
 #include "sockets.h"
 
-void ask_login(char buf[MAX]);
+void ask_login(char buf[STR_LEN]);
+void show_prompt(int32_t sockfd, ssize_t rw, char buffer[STR_LEN]);
+
+int32_t sockfd;
 
 /**
+ * @brief
  * Handler para detectar la señal 'Ctrl+C' y enviar el comando 'exit'.
  * @param fd File descriptor del socket a cerrar.
  */
-void sig_handler(int fd)
+void sig_handler()
 {
-  send_cmd(fd,"exit");
+  send_cmd(sockfd,"exit");
   printf("\n");
   exit(EXIT_SUCCESS);
 }
@@ -40,13 +44,11 @@ int main(void)
     exit(EXIT_FAILURE);
   }
 
-  int32_t terminar = 0;
-  int32_t authorized = 0;
   int32_t tries = 3;
 
-  char buffer[MAX];
+  char buffer[STR_LEN];
 
-	int32_t sockfd = create_clsocket(PORT_PS);
+	sockfd = create_clsocket(PORT_PS);
   ssize_t rw;
 
   do
@@ -63,64 +65,31 @@ int main(void)
 
     rw = recv_cmd(sockfd, buffer);
 
-    if(!strcmp(buffer,"A")) authorized = 1;
-    else
+    if(strchr(buffer,'/') != NULL)
     {
-      printf("Credenciales inválidas.\n");
+      printf("\nLast login: %s\n", buffer);
+      show_prompt(sockfd, rw, buffer);
+    } else
+    {
+      printf("%s\n", buffer);
       tries--;
     }
-  } while(!authorized && tries > 0);
+  } while(tries > 0);
 
-
-  while(1)
-  {
-		printf( "#> ");
-		memset( buffer, '\0', MAX );
-		fgets( buffer, MAX-1, stdin );
-    buffer[strlen(buffer)] = '\0';
-
-    printf("Len: %lu, msg: %s\n", strlen(buffer), buffer);
-
-		rw = send_cmd(sockfd, buffer);
-
-    if(rw == -1)
-    {
-      perror("write");
-      exit(EXIT_FAILURE);
-    }
-
-		// Verificando si se escribió: exit
-		buffer[strlen(buffer)-1] = '\0';
-		if(!strcmp("exit", buffer))
-			terminar = 1;
-
-    //memset(buffer, '\0', MAX);
-		rw = recv_cmd(sockfd, buffer);
-
-    if(rw == -1)
-    {
-      perror("read");
-      exit(EXIT_FAILURE);
-    }
-
-		printf( "Respuesta: %s\n", buffer );
-		if( terminar ) {
-			printf( "Bye.\n" );
-			exit(EXIT_SUCCESS);
-		}
-	}
+  return EXIT_SUCCESS;
 }
 
 /**
+ * @brief
  * Función encargada de tomar las credenciales (usuario y contraseña) para el
  * login. Estas credenciales se guardan en la estructura 'log_msg' con el
  * fin de enviar las credenciales a 'auth_service'.
  * @param struct log_msg  Mensaje con las credenciales del usuario.
  */
-void ask_login(char buf[MAX])
+void ask_login(char buf[STR_LEN])
 {
   printf("Ingrese usuario: ");
-  fgets(buf, MAX, stdin);
+  if(fgets(buf, STR_LEN, stdin) == NULL) perror("fgets login");
   buf[strlen(buf)-1] = ',';
 
   printf("Ingrese contraseña: ");
@@ -146,4 +115,44 @@ void ask_login(char buf[MAX])
   printf("\n");
 
   tcsetattr(STDIN_FILENO, TCSANOW, &original);
+}
+
+/**
+ * @brief
+ * Función encargada de mostrar el 'prompt' al usuario en caso de ser validadas
+ * las credenciales enviadas.
+ * @param sockfd File descriptor del socket al servidor.
+ * @param rw     Resultado de la operación de Lectura/escritura.
+ * @param buffer Mensaje enviado/recibido.
+ */
+void show_prompt(int32_t sockfd, ssize_t rw, char buffer[STR_LEN])
+{
+  while(1)
+  {
+		printf("#> ");
+		memset(buffer, '\0', STR_LEN);
+		if(fgets(buffer, STR_LEN-1, stdin) == NULL) perror("fgets prompt");
+    buffer[strlen(buffer)-1] = '\0';
+
+		rw = send_cmd(sockfd, buffer);
+
+    if(rw == -1)
+    {
+      perror("write");
+      exit(EXIT_FAILURE);
+    }
+
+		// Verificando si se escribió: exit
+    if(!strcmp(buffer, "exit")) exit(EXIT_SUCCESS);
+
+    rw = recv_cmd(sockfd, buffer);
+
+    printf("%s\n", buffer);
+
+    if(rw == -1)
+    {
+      perror("read");
+      exit(EXIT_FAILURE);
+    }
+	}
 }

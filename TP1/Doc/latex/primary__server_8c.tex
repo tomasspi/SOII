@@ -1,0 +1,102 @@
+\hypertarget{primary__server_8c}{}\section{src/primary\+\_\+server.c File Reference}
+\label{primary__server_8c}\index{src/primary\+\_\+server.\+c@{src/primary\+\_\+server.\+c}}
+
+
+Proceso con el rol de \textquotesingle{}middleware\textquotesingle{}.  
+
+
+{\ttfamily \#include $<$stdio.\+h$>$}\newline
+{\ttfamily \#include $<$stdlib.\+h$>$}\newline
+{\ttfamily \#include $<$string.\+h$>$}\newline
+{\ttfamily \#include $<$sys/types.\+h$>$}\newline
+{\ttfamily \#include $<$netinet/in.\+h$>$}\newline
+{\ttfamily \#include $<$sys/ipc.\+h$>$}\newline
+{\ttfamily \#include $<$sys/msg.\+h$>$}\newline
+{\ttfamily \#include $<$unistd.\+h$>$}\newline
+{\ttfamily \#include $<$sys/socket.\+h$>$}\newline
+{\ttfamily \#include $<$sys/wait.\+h$>$}\newline
+{\ttfamily \#include \char`\"{}messages.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}sockets.\+h\char`\"{}}\newline
+\subsection*{Macros}
+\begin{DoxyCompactItemize}
+\item 
+\#define \hyperlink{primary__server_8c_a8bfbbf31b7d3c07215440d18a064b7f4}{U\+S\+ER}~\textquotesingle{}u\textquotesingle{}
+\begin{DoxyCompactList}\small\item\em El comando \textquotesingle{}user\textquotesingle{}. \end{DoxyCompactList}\item 
+\#define \hyperlink{primary__server_8c_a3e8cefeee58f762ff50bcef35fa12eec}{F\+I\+LE}~\textquotesingle{}f\textquotesingle{}
+\begin{DoxyCompactList}\small\item\em El comando \textquotesingle{}file\textquotesingle{}. \end{DoxyCompactList}\item 
+\#define \hyperlink{primary__server_8c_aeb0ce037090c628feafc65349031b214}{LS}~\char`\"{}ls\char`\"{}
+\begin{DoxyCompactList}\small\item\em El comando \textquotesingle{}ls\textquotesingle{}. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \hyperlink{primary__server_8c_a730344f1fcdec27161083672db671a20}{send\+\_\+client} (ssize\+\_\+t rw, int newfd, struct \hyperlink{structmsg}{msg} $\ast$buf)
+\begin{DoxyCompactList}\small\item\em Envía el mensaje recibido por los procesos hijos (\textquotesingle{}auth\+\_\+service\textquotesingle{} o \textquotesingle{}files\+\_\+service\textquotesingle{}) al cliente. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{primary__server_8c_a840291bc02cba5474a4cb46a9b9566fe}\label{primary__server_8c_a840291bc02cba5474a4cb46a9b9566fe}} 
+int {\bfseries main} (void)
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+Proceso con el rol de \textquotesingle{}middleware\textquotesingle{}. 
+
+Es el encargado de establecer las conexiones y utiliza los procesos \textquotesingle{}auth\textquotesingle{} y \textquotesingle{}fileserv\textquotesingle{} para cumplir los requerimientos del sistema.
+
+\begin{DoxyAuthor}{Author}
+Tomás Santiago Piñero 
+\end{DoxyAuthor}
+
+
+\subsection{Macro Definition Documentation}
+\mbox{\Hypertarget{primary__server_8c_a3e8cefeee58f762ff50bcef35fa12eec}\label{primary__server_8c_a3e8cefeee58f762ff50bcef35fa12eec}} 
+\index{primary\+\_\+server.\+c@{primary\+\_\+server.\+c}!F\+I\+LE@{F\+I\+LE}}
+\index{F\+I\+LE@{F\+I\+LE}!primary\+\_\+server.\+c@{primary\+\_\+server.\+c}}
+\subsubsection{\texorpdfstring{F\+I\+LE}{FILE}}
+{\footnotesize\ttfamily \#define F\+I\+LE~\textquotesingle{}f\textquotesingle{}}
+
+
+
+El comando \textquotesingle{}file\textquotesingle{}. 
+
+\mbox{\Hypertarget{primary__server_8c_aeb0ce037090c628feafc65349031b214}\label{primary__server_8c_aeb0ce037090c628feafc65349031b214}} 
+\index{primary\+\_\+server.\+c@{primary\+\_\+server.\+c}!LS@{LS}}
+\index{LS@{LS}!primary\+\_\+server.\+c@{primary\+\_\+server.\+c}}
+\subsubsection{\texorpdfstring{LS}{LS}}
+{\footnotesize\ttfamily \#define LS~\char`\"{}ls\char`\"{}}
+
+
+
+El comando \textquotesingle{}ls\textquotesingle{}. 
+
+\mbox{\Hypertarget{primary__server_8c_a8bfbbf31b7d3c07215440d18a064b7f4}\label{primary__server_8c_a8bfbbf31b7d3c07215440d18a064b7f4}} 
+\index{primary\+\_\+server.\+c@{primary\+\_\+server.\+c}!U\+S\+ER@{U\+S\+ER}}
+\index{U\+S\+ER@{U\+S\+ER}!primary\+\_\+server.\+c@{primary\+\_\+server.\+c}}
+\subsubsection{\texorpdfstring{U\+S\+ER}{USER}}
+{\footnotesize\ttfamily \#define U\+S\+ER~\textquotesingle{}u\textquotesingle{}}
+
+
+
+El comando \textquotesingle{}user\textquotesingle{}. 
+
+
+
+\subsection{Function Documentation}
+\mbox{\Hypertarget{primary__server_8c_a730344f1fcdec27161083672db671a20}\label{primary__server_8c_a730344f1fcdec27161083672db671a20}} 
+\index{primary\+\_\+server.\+c@{primary\+\_\+server.\+c}!send\+\_\+client@{send\+\_\+client}}
+\index{send\+\_\+client@{send\+\_\+client}!primary\+\_\+server.\+c@{primary\+\_\+server.\+c}}
+\subsubsection{\texorpdfstring{send\+\_\+client()}{send\_client()}}
+{\footnotesize\ttfamily void send\+\_\+client (\begin{DoxyParamCaption}\item[{ssize\+\_\+t}]{rw,  }\item[{int}]{newfd,  }\item[{struct \hyperlink{structmsg}{msg} $\ast$}]{buf }\end{DoxyParamCaption})}
+
+
+
+Envía el mensaje recibido por los procesos hijos (\textquotesingle{}auth\+\_\+service\textquotesingle{} o \textquotesingle{}files\+\_\+service\textquotesingle{}) al cliente. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em rw} & Resultado de la escritura en el socket. \\
+\hline
+{\em newfd} & File descriptor perteneciente al socket. \\
+\hline
+{\em buf} & Mensaje a enviar. \\
+\hline
+\end{DoxyParams}
+$<$ Escritura 

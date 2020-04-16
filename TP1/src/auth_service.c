@@ -1,3 +1,12 @@
+/**
+ * @file auth_service.c
+ * @brief
+ * Proceso encargado de proveer las funcionalidades asociadas al manejo de la
+ * base de datos de usuarios.
+ *
+ * @author Tomás Santiago Piñero
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -12,35 +21,35 @@
 #define COLUMNAS  5            /**< Cantidad de columnas de la BD. */
 #define BLOCKED_Q "bloqueado"  /**< ¿El usuario está bloqueado? */
 #define DB_PATH   "../res/usuarios_database.txt" /**< Path a la BD.*/
+#define TMP_PATH  "../res/DB.tmp"
 #define FECHA     'F'          /**< Utilizada para cambiar fecha en BD. */
 #define PASSWD    'P'          /**< Utilizado para cambiar password en BD. */
-#define LINE_LEN  50           /**< Largo de la linea a leer. */
+#define STATUS    'S'          /**< Utilizado para cambiar el estado en BD. */
+#define LINE_LEN  80           /**< Largo de la linea a leer. */
 
-char date[20]; /**< Fecha actual. */
-
-void get_date();
-void print_database();
+void login(char buf[STR_LEN], char credentials[2][STR_LEN]);
+void get_date(char date[20]);
+int get_lines();
+void print_database(int msqid, struct msg buf);
 void write_database(char data[COLUMNAS][STR_LEN], const char t, const char *new);
-void reemplazar(char *str, const char *old, const char *new);
+void replace(char *str, const char *old, const char *new);
 bool check_database(char input[2][STR_LEN], char database[COLUMNAS][STR_LEN]);
-int check_credentials(char credentials[2][STR_LEN], char data[COLUMNAS][STR_LEN]);
+int  check_credentials(char credentials[2][STR_LEN], char data[COLUMNAS][STR_LEN]);
 
+char date[20];  /**< Fecha actual. */
 
 int main(void)
 {
+  printf("Authentication service started.\n");
 
   char input[2][STR_LEN];           /**< Almacena las credenciales recibidas. */
   char database[COLUMNAS][STR_LEN]; /**< Almacena los datos obtenidos de la BD. */
 
-  get_date();
-  printf("%s", date);
-
-  struct log_msg log; /**< Mensaje de login. */
-  struct msg buf;     /**< Mensaje de proósitos generales. */
+  struct msg buf;
   int msqid;
   key_t key;
 
-  if ((key = ftok("../src/primary_server.c", 5)) == -1)
+  if ((key = ftok(QU_PATH, 5)) == -1)
   {
     perror("ftok");
     exit(EXIT_FAILURE);
@@ -52,47 +61,93 @@ int main(void)
     exit(EXIT_FAILURE);
   }
 
-  buf.mtype = TO_PRIM;
+  //buf.mtype = TO_PRIM;
+  int tries = 3;
 
-  while (1)
+  do
   {
-    msgrcv(msqid, &log, sizeof(log.login), TO_AUTH, 0);
+    msgrcv(msqid, &buf, sizeof(buf.msg), TO_AUTH, 0);
 
-    strcpy(input[0],log.login.username);
-    strcpy(input[1],log.login.password);
+    login(buf.msg, input);
 
     if(check_database(input, database))
     {
       switch(check_credentials(input, database))
       {
         case BLOCKED:
-              printf("Blocked.\n");
-              strcpy(buf.msg, "B");
-              break;
+          strcpy(buf.msg, "El usuario está bloqueado.\n");
+          break;
+
         case ACTIVE:
-              printf("Active.\n");
-              strcpy(buf.msg, "A");
-              break;
+          strcpy(buf.msg, database[COLUMNAS-1]);
+          get_date(date);
+          write_database(database, FECHA, date);
+          tries = 0;
+          break;
+
         case INVALID:
-              printf("Invalid.\n");
-              strcpy(buf.msg, "I");
-              break;
+          strcpy(buf.msg, "Credenciales inválidas.\n");
+          tries--;
+          if(tries == 0)
+          {
+            strcpy(buf.msg, "El usuario ha sido bloqueado.\n");
+            write_database(database, STATUS, BLOCKED_Q);
+          }
+          break;
       }
-    } else
-    {
-      printf("Not registered.\n");
-      strcpy(buf.msg,"NR");
-    }
+    } else strcpy(buf.msg,"El usuario no existe.\n");
 
+    buf.mtype = TO_PRIM;
     msgsnd(msqid, &buf, sizeof(buf.msg), 0);
+  } while(tries);
 
-    break;
+  while(1)
+  {
+    printf("%s\n", "Te escucho con todo el amor del mundo bb");
+    msgrcv(msqid, &buf, sizeof(buf.msg), TO_AUTH, 0);
+
+    if(!strcmp(buf.msg, "exit")) exit(EXIT_SUCCESS);
+
+    if(!strcmp(buf.msg,"ls"))
+    {
+      buf.mtype = TO_PRIM;
+
+      int lineas = get_lines();
+      sprintf(buf.msg, "%d", lineas);
+      msgsnd(msqid, &buf, sizeof(buf.msg), 0);
+
+      print_database(msqid, buf);
+    }
   }
+
+
+
 
   return EXIT_SUCCESS;
 }
 
 /**
+ * @brief
+ * Función encargada de tomar las credenciales (usuario y contraseña) para el
+ * login. Estas credenciales se guardan en la estructura 'log_msg' con el
+ * fin de enviar las credenciales a 'auth_service'.
+ * @param buf[STR_LEN]            Mensaje con las credenciales del usuario.
+ * @param credentials[2][STR_LEN] Credenciales separadas.
+ */
+void login(char buf[STR_LEN], char credentials[2][STR_LEN])
+{
+  char *tok;
+  tok = strtok(buf,",");
+
+  strcpy(credentials[0],tok);
+
+  tok = strtok(NULL,"");
+
+  strcpy(credentials[1],tok);
+}
+
+/**
+ * @brief
  * Función encargada de verificar si el usuario ingresado se encuentra
  * almacenado en la base de datos (usuarios_database.txt). En caso de que el
  * usuario exista, se guardan los datos obtenidos en el arreglo 2D 'database'.
@@ -110,6 +165,7 @@ bool check_database(char input[2][STR_LEN], char database[COLUMNAS][STR_LEN])
 
   if(archivo == NULL)
     perror("Archivo DB");
+
 
   while(fgets(string, LINE_LEN, archivo) != NULL)
   {
@@ -144,6 +200,7 @@ bool check_database(char input[2][STR_LEN], char database[COLUMNAS][STR_LEN])
 }
 
 /**
+ * @brief
  * Función encargada de verificar las credenciales ingresadas con las que
  * fueron obtenidas de la base de datos. En caso de que las credenciales sean
  * válidas, modifica la última fecha de acceso por medio de la función
@@ -155,32 +212,22 @@ bool check_database(char input[2][STR_LEN], char database[COLUMNAS][STR_LEN])
  */
 int check_credentials(char credentials[2][STR_LEN], char data[COLUMNAS][STR_LEN])
 {
-  printf("\n");
 
   if(!strcmp(credentials[1],data[2]))
   {
-    if(!strcmp(data[3],BLOCKED_Q))
-      return BLOCKED;
-    else
-    {
-      printf("Last login: %s\n", data[COLUMNAS-1]);
-
-      if(data[COLUMNAS-1] != date)
-      {
-        get_date();
-        write_database(data, FECHA, date);
-      }
-      return ACTIVE;
-    }
+    if(!strcmp(data[COLUMNAS-2],BLOCKED_Q)) return BLOCKED;
+    else return ACTIVE;
   } else return INVALID;
 }
 
 /**
+ * @brief
  * Función encargada de imprimir los datos que se encuentran registrados en la
  * base de datos (usuarios_database.txt).
- * @param archivo Archivo a imprimir.
+ * @param msqid ID de la cola de mensajes.
+ * @param buf   Estructura para enviar los mensajes.
  */
-void print_database()
+void print_database(int msqid, struct msg buf)
 {
   char string[LINE_LEN];
   char *tmp, *contenido[COLUMNAS];
@@ -191,9 +238,14 @@ void print_database()
   if(archivo == NULL)
     perror("Archivo DB");
 
-  printf("============================================================\n");
-  printf("%-15s %-15s %-15s\n", "Usuario", "Estado", "Último login");
-  printf("============================================================\n");
+  strcpy(buf.msg, "============================================================\n");
+  msgsnd(msqid, &buf, sizeof(buf.msg), 0);
+
+  sprintf(buf.msg, "%-15s %-15s %-15s\n", "Usuario", "Estado", "Último login");
+  msgsnd(msqid, &buf, sizeof(buf.msg), 0);
+
+  strcpy(buf.msg, "============================================================\n");
+  msgsnd(msqid, &buf, sizeof(buf.msg), 0);
 
   while(fgets(string, LINE_LEN, archivo) != NULL)
   {
@@ -212,15 +264,16 @@ void print_database()
       tmp = strtok(NULL,",");
     }
 
-    printf("%-15s %-15s %-15s\n", contenido[1], contenido[3], contenido[4]);
+    sprintf(buf.msg, "%-15s %-15s %-15s\n", contenido[1], contenido[3], contenido[4]);
+    msgsnd(msqid, &buf, sizeof(buf.msg), 0);
   }
   fclose(archivo);
 }
 
 /**
+ * @brief
  * Función encargada de modificar los datos que se encuentran registrados en la
  * base de datos (usuarios_database.txt).
- * @param archivo                  Archivo a modificar.
  * @param data[COLUMNAS][STR_LEN]  Datos del usuario a modificar.
  * @param t                        Valor a modificar (FECHA o PASSWD).
  * @param new                      Nuevo valor.
@@ -231,7 +284,7 @@ void write_database(char data[COLUMNAS][STR_LEN], const char t, const char *new)
   FILE *archivo, *reemplazo;
 
   archivo = fopen(DB_PATH, "r");
-  reemplazo = fopen("../res/DB.tmp", "w");
+  reemplazo = fopen(TMP_PATH, "w");
 
   if(archivo == NULL || reemplazo == NULL)
     perror("write_database");
@@ -241,15 +294,22 @@ void write_database(char data[COLUMNAS][STR_LEN], const char t, const char *new)
     //Busco usuario por ID.
     if(!strncmp(string,data[0],1))
     {
-      if(t == FECHA)
+      switch (t)
       {
-        get_date();
-        reemplazar(string, data[COLUMNAS-1], new);
-        fputs(string, reemplazo);
-      } else if (t == PASSWD)
-      {
-        reemplazar(string, data[COLUMNAS-3], new);
-        fputs(string, reemplazo);
+        case FECHA:
+          replace(string, data[COLUMNAS-1], new);
+          fputs(string, reemplazo);
+          break;
+
+        case STATUS:
+          replace(string, data[COLUMNAS-2], new);
+          fputs(string, reemplazo);
+          break;
+
+        case PASSWD:
+          replace(string, data[COLUMNAS-3], new);
+          fputs(string, reemplazo);
+          break;
       }
     } else fputs(string, reemplazo);
   }
@@ -257,17 +317,18 @@ void write_database(char data[COLUMNAS][STR_LEN], const char t, const char *new)
   fclose(reemplazo);
 
   remove(DB_PATH);
-  rename("../res/DB.tmp", DB_PATH);
+  rename(TMP_PATH, DB_PATH);
 }
 
 /**
+ * @brief
  * Función encargada de reemplazar en una línea los campos que se pasen como
  * parámetros.
  * @param str Linea que contiene los datos del usuario.
  * @param old Valor a reemplazar.
  * @param new Nuevo valor.
  */
-void reemplazar(char *str, const char *old, const char *new)
+void replace(char *str, const char *old, const char *new)
 {
   char *pos, temp[LINE_LEN];
   long indice = 0;
@@ -286,15 +347,15 @@ void reemplazar(char *str, const char *old, const char *new)
     strcat(str,new); //concatena con el contendio nuevo
 
     strcat(str, temp+indice+len); //concatena con el resto
-
-    str[strlen(str)-1] = '\0'; //quita el salto de linea molesto
   }
 }
 
 /**
+ * @brief
  * Función encargada de obtener la fecha actual.
+ * @param date[20] Fecha actual.
  */
-void get_date()
+void get_date(char date[20])
 {
   int dd, mm, yyyy, h, min, seg;
 
@@ -318,4 +379,27 @@ void get_date()
   yyyy = local->tm_year + 1900;	// get year since 1900
 
   sprintf(date,"%02d/%02d/%d %02d:%02d:%02d\n", dd, mm, yyyy, h, min, seg);
+  date[strlen(date)-1] = '\0';
+}
+
+/**
+ * @brief
+ * Obtiene la cantidad de usuarios registrados en la base de datos.
+ * @return Cantidad de usuerios registrados.
+ */
+int get_lines()
+{
+  int lineas = 0;
+  char string[LINE_LEN];
+
+  FILE *archivo = fopen(DB_PATH, "r");
+
+  if(archivo == NULL)
+    perror("Archivo DB");
+
+  while(fgets(string, LINE_LEN, archivo) != NULL) lineas++;
+
+  fclose(archivo);
+
+  return lineas;
 }

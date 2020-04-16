@@ -1,0 +1,298 @@
+\hypertarget{auth__service_8c}{}\section{src/auth\+\_\+service.c File Reference}
+\label{auth__service_8c}\index{src/auth\+\_\+service.\+c@{src/auth\+\_\+service.\+c}}
+
+
+Proceso encargado de proveer las funcionalidades asociadas al manejo de la base de datos de usuarios.  
+
+
+{\ttfamily \#include $<$stdio.\+h$>$}\newline
+{\ttfamily \#include $<$stdlib.\+h$>$}\newline
+{\ttfamily \#include $<$string.\+h$>$}\newline
+{\ttfamily \#include $<$stdint.\+h$>$}\newline
+{\ttfamily \#include $<$unistd.\+h$>$}\newline
+{\ttfamily \#include $<$stdbool.\+h$>$}\newline
+{\ttfamily \#include $<$time.\+h$>$}\newline
+{\ttfamily \#include $<$sys/msg.\+h$>$}\newline
+{\ttfamily \#include \char`\"{}messages.\+h\char`\"{}}\newline
+\subsection*{Macros}
+\begin{DoxyCompactItemize}
+\item 
+\#define \hyperlink{auth__service_8c_a6aaab185063028ab19d3d8a7f90a58ac}{C\+O\+L\+U\+M\+N\+AS}~5
+\begin{DoxyCompactList}\small\item\em Cantidad de columnas de la BD. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{auth__service_8c_ac71a60fccb2e71f38c8e9d33a3a75a3f}\label{auth__service_8c_ac71a60fccb2e71f38c8e9d33a3a75a3f}} 
+\#define \hyperlink{auth__service_8c_ac71a60fccb2e71f38c8e9d33a3a75a3f}{B\+L\+O\+C\+K\+E\+D\+\_\+Q}~\char`\"{}bloqueado\char`\"{}
+\begin{DoxyCompactList}\small\item\em ¿\+El usuario está bloqueado? \end{DoxyCompactList}\item 
+\#define \hyperlink{auth__service_8c_a0670e0e3546fcd815d007fe1aeff321e}{D\+B\+\_\+\+P\+A\+TH}~\char`\"{}../res/usuarios\+\_\+database.\+txt\char`\"{}
+\begin{DoxyCompactList}\small\item\em Path a la BD. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{auth__service_8c_ae241ca532af108b7b6abe598e4b07f49}\label{auth__service_8c_ae241ca532af108b7b6abe598e4b07f49}} 
+\#define {\bfseries T\+M\+P\+\_\+\+P\+A\+TH}~\char`\"{}../res/D\+B.\+tmp\char`\"{}
+\item 
+\#define \hyperlink{auth__service_8c_a7bd36578ecbfac44d990965bbc9aacb0}{F\+E\+C\+HA}~\textquotesingle{}F\textquotesingle{}
+\begin{DoxyCompactList}\small\item\em Utilizada para cambiar fecha en BD. \end{DoxyCompactList}\item 
+\#define \hyperlink{auth__service_8c_ae6b9caf9583b8870872fb9fdf622128a}{P\+A\+S\+S\+WD}~\textquotesingle{}P\textquotesingle{}
+\begin{DoxyCompactList}\small\item\em Utilizado para cambiar password en BD. \end{DoxyCompactList}\item 
+\#define \hyperlink{auth__service_8c_a59279bee44f34d08b3cbf3a89fb0d8d9}{S\+T\+A\+T\+US}~\textquotesingle{}S\textquotesingle{}
+\begin{DoxyCompactList}\small\item\em Utilizado para cambiar el estado en BD. \end{DoxyCompactList}\item 
+\#define \hyperlink{auth__service_8c_a45db13d622cb21897aa934e5ad411c83}{L\+I\+N\+E\+\_\+\+L\+EN}~80
+\begin{DoxyCompactList}\small\item\em Largo de la linea a leer. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \hyperlink{auth__service_8c_a6fe480b4962a2d2f21c8aba709c90a79}{login} (char buf\mbox{[}\hyperlink{sockets_8h_af5b27449abdfc22a937250696492e03f}{S\+T\+R\+\_\+\+L\+EN}\mbox{]}, char credentials\mbox{[}2\mbox{]}\mbox{[}\hyperlink{sockets_8h_af5b27449abdfc22a937250696492e03f}{S\+T\+R\+\_\+\+L\+EN}\mbox{]})
+\begin{DoxyCompactList}\small\item\em Función encargada de tomar las credenciales (usuario y contraseña) para el login. \end{DoxyCompactList}\item 
+void \hyperlink{auth__service_8c_aef7cc33fdff4a9e118f979d5757abea2}{get\+\_\+date} (char \hyperlink{auth__service_8c_ac4ea108764c8e78de5927da08bc0af95}{date}\mbox{[}20\mbox{]})
+\begin{DoxyCompactList}\small\item\em Función encargada de obtener la fecha actual. \end{DoxyCompactList}\item 
+int \hyperlink{auth__service_8c_a41e614be9cd359af7e88941381c38b38}{get\+\_\+lines} ()
+\begin{DoxyCompactList}\small\item\em Obtiene la cantidad de usuarios registrados en la base de datos. \end{DoxyCompactList}\item 
+void \hyperlink{auth__service_8c_ac392e2673ef515d913cb142e6ad3d54d}{print\+\_\+database} (int msqid, struct \hyperlink{structmsg}{msg} buf)
+\begin{DoxyCompactList}\small\item\em Función encargada de imprimir los datos que se encuentran registrados en la base de datos (usuarios\+\_\+database.\+txt). \end{DoxyCompactList}\item 
+void \hyperlink{auth__service_8c_a292ce7421f92e5a9b0ae8b592a21bd77}{write\+\_\+database} (char data\mbox{[}\hyperlink{auth__service_8c_a6aaab185063028ab19d3d8a7f90a58ac}{C\+O\+L\+U\+M\+N\+AS}\mbox{]}\mbox{[}\hyperlink{sockets_8h_af5b27449abdfc22a937250696492e03f}{S\+T\+R\+\_\+\+L\+EN}\mbox{]}, const char t, const char $\ast$new)
+\begin{DoxyCompactList}\small\item\em Función encargada de modificar los datos que se encuentran registrados en la base de datos (usuarios\+\_\+database.\+txt). \end{DoxyCompactList}\item 
+void \hyperlink{auth__service_8c_a29406420d77bef9c011fbd129f45e690}{replace} (char $\ast$str, const char $\ast$old, const char $\ast$new)
+\begin{DoxyCompactList}\small\item\em Función encargada de reemplazar en una línea los campos que se pasen como parámetros. \end{DoxyCompactList}\item 
+bool \hyperlink{auth__service_8c_a489976570d39faa024d2176984081cbe}{check\+\_\+database} (char input\mbox{[}2\mbox{]}\mbox{[}\hyperlink{sockets_8h_af5b27449abdfc22a937250696492e03f}{S\+T\+R\+\_\+\+L\+EN}\mbox{]}, char database\mbox{[}\hyperlink{auth__service_8c_a6aaab185063028ab19d3d8a7f90a58ac}{C\+O\+L\+U\+M\+N\+AS}\mbox{]}\mbox{[}\hyperlink{sockets_8h_af5b27449abdfc22a937250696492e03f}{S\+T\+R\+\_\+\+L\+EN}\mbox{]})
+\begin{DoxyCompactList}\small\item\em Función encargada de verificar si el usuario ingresado se encuentra almacenado en la base de datos (usuarios\+\_\+database.\+txt). \end{DoxyCompactList}\item 
+int \hyperlink{auth__service_8c_afe9335c6f48e59659a025c8602e16ef8}{check\+\_\+credentials} (char credentials\mbox{[}2\mbox{]}\mbox{[}\hyperlink{sockets_8h_af5b27449abdfc22a937250696492e03f}{S\+T\+R\+\_\+\+L\+EN}\mbox{]}, char data\mbox{[}\hyperlink{auth__service_8c_a6aaab185063028ab19d3d8a7f90a58ac}{C\+O\+L\+U\+M\+N\+AS}\mbox{]}\mbox{[}\hyperlink{sockets_8h_af5b27449abdfc22a937250696492e03f}{S\+T\+R\+\_\+\+L\+EN}\mbox{]})
+\begin{DoxyCompactList}\small\item\em Función encargada de verificar las credenciales ingresadas con las que fueron obtenidas de la base de datos. \end{DoxyCompactList}\item 
+int \hyperlink{auth__service_8c_a840291bc02cba5474a4cb46a9b9566fe}{main} (void)
+\end{DoxyCompactItemize}
+\subsection*{Variables}
+\begin{DoxyCompactItemize}
+\item 
+char \hyperlink{auth__service_8c_ac4ea108764c8e78de5927da08bc0af95}{date} \mbox{[}20\mbox{]}
+\begin{DoxyCompactList}\small\item\em Fecha actual. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+Proceso encargado de proveer las funcionalidades asociadas al manejo de la base de datos de usuarios. 
+
+\begin{DoxyAuthor}{Author}
+Tomás Santiago Piñero 
+\end{DoxyAuthor}
+
+
+\subsection{Macro Definition Documentation}
+\mbox{\Hypertarget{auth__service_8c_a6aaab185063028ab19d3d8a7f90a58ac}\label{auth__service_8c_a6aaab185063028ab19d3d8a7f90a58ac}} 
+\index{auth\+\_\+service.\+c@{auth\+\_\+service.\+c}!C\+O\+L\+U\+M\+N\+AS@{C\+O\+L\+U\+M\+N\+AS}}
+\index{C\+O\+L\+U\+M\+N\+AS@{C\+O\+L\+U\+M\+N\+AS}!auth\+\_\+service.\+c@{auth\+\_\+service.\+c}}
+\subsubsection{\texorpdfstring{C\+O\+L\+U\+M\+N\+AS}{COLUMNAS}}
+{\footnotesize\ttfamily \#define C\+O\+L\+U\+M\+N\+AS~5}
+
+
+
+Cantidad de columnas de la BD. 
+
+\mbox{\Hypertarget{auth__service_8c_a0670e0e3546fcd815d007fe1aeff321e}\label{auth__service_8c_a0670e0e3546fcd815d007fe1aeff321e}} 
+\index{auth\+\_\+service.\+c@{auth\+\_\+service.\+c}!D\+B\+\_\+\+P\+A\+TH@{D\+B\+\_\+\+P\+A\+TH}}
+\index{D\+B\+\_\+\+P\+A\+TH@{D\+B\+\_\+\+P\+A\+TH}!auth\+\_\+service.\+c@{auth\+\_\+service.\+c}}
+\subsubsection{\texorpdfstring{D\+B\+\_\+\+P\+A\+TH}{DB\_PATH}}
+{\footnotesize\ttfamily \#define D\+B\+\_\+\+P\+A\+TH~\char`\"{}../res/usuarios\+\_\+database.\+txt\char`\"{}}
+
+
+
+Path a la BD. 
+
+\mbox{\Hypertarget{auth__service_8c_a7bd36578ecbfac44d990965bbc9aacb0}\label{auth__service_8c_a7bd36578ecbfac44d990965bbc9aacb0}} 
+\index{auth\+\_\+service.\+c@{auth\+\_\+service.\+c}!F\+E\+C\+HA@{F\+E\+C\+HA}}
+\index{F\+E\+C\+HA@{F\+E\+C\+HA}!auth\+\_\+service.\+c@{auth\+\_\+service.\+c}}
+\subsubsection{\texorpdfstring{F\+E\+C\+HA}{FECHA}}
+{\footnotesize\ttfamily \#define F\+E\+C\+HA~\textquotesingle{}F\textquotesingle{}}
+
+
+
+Utilizada para cambiar fecha en BD. 
+
+\mbox{\Hypertarget{auth__service_8c_a45db13d622cb21897aa934e5ad411c83}\label{auth__service_8c_a45db13d622cb21897aa934e5ad411c83}} 
+\index{auth\+\_\+service.\+c@{auth\+\_\+service.\+c}!L\+I\+N\+E\+\_\+\+L\+EN@{L\+I\+N\+E\+\_\+\+L\+EN}}
+\index{L\+I\+N\+E\+\_\+\+L\+EN@{L\+I\+N\+E\+\_\+\+L\+EN}!auth\+\_\+service.\+c@{auth\+\_\+service.\+c}}
+\subsubsection{\texorpdfstring{L\+I\+N\+E\+\_\+\+L\+EN}{LINE\_LEN}}
+{\footnotesize\ttfamily \#define L\+I\+N\+E\+\_\+\+L\+EN~80}
+
+
+
+Largo de la linea a leer. 
+
+\mbox{\Hypertarget{auth__service_8c_ae6b9caf9583b8870872fb9fdf622128a}\label{auth__service_8c_ae6b9caf9583b8870872fb9fdf622128a}} 
+\index{auth\+\_\+service.\+c@{auth\+\_\+service.\+c}!P\+A\+S\+S\+WD@{P\+A\+S\+S\+WD}}
+\index{P\+A\+S\+S\+WD@{P\+A\+S\+S\+WD}!auth\+\_\+service.\+c@{auth\+\_\+service.\+c}}
+\subsubsection{\texorpdfstring{P\+A\+S\+S\+WD}{PASSWD}}
+{\footnotesize\ttfamily \#define P\+A\+S\+S\+WD~\textquotesingle{}P\textquotesingle{}}
+
+
+
+Utilizado para cambiar password en BD. 
+
+\mbox{\Hypertarget{auth__service_8c_a59279bee44f34d08b3cbf3a89fb0d8d9}\label{auth__service_8c_a59279bee44f34d08b3cbf3a89fb0d8d9}} 
+\index{auth\+\_\+service.\+c@{auth\+\_\+service.\+c}!S\+T\+A\+T\+US@{S\+T\+A\+T\+US}}
+\index{S\+T\+A\+T\+US@{S\+T\+A\+T\+US}!auth\+\_\+service.\+c@{auth\+\_\+service.\+c}}
+\subsubsection{\texorpdfstring{S\+T\+A\+T\+US}{STATUS}}
+{\footnotesize\ttfamily \#define S\+T\+A\+T\+US~\textquotesingle{}S\textquotesingle{}}
+
+
+
+Utilizado para cambiar el estado en BD. 
+
+
+
+\subsection{Function Documentation}
+\mbox{\Hypertarget{auth__service_8c_afe9335c6f48e59659a025c8602e16ef8}\label{auth__service_8c_afe9335c6f48e59659a025c8602e16ef8}} 
+\index{auth\+\_\+service.\+c@{auth\+\_\+service.\+c}!check\+\_\+credentials@{check\+\_\+credentials}}
+\index{check\+\_\+credentials@{check\+\_\+credentials}!auth\+\_\+service.\+c@{auth\+\_\+service.\+c}}
+\subsubsection{\texorpdfstring{check\+\_\+credentials()}{check\_credentials()}}
+{\footnotesize\ttfamily int check\+\_\+credentials (\begin{DoxyParamCaption}\item[{char}]{credentials\mbox{[}2\mbox{]}\mbox{[}\+S\+T\+R\+\_\+\+L\+E\+N\mbox{]},  }\item[{char}]{data\mbox{[}\+C\+O\+L\+U\+M\+N\+A\+S\mbox{]}\mbox{[}\+S\+T\+R\+\_\+\+L\+E\+N\mbox{]} }\end{DoxyParamCaption})}
+
+
+
+Función encargada de verificar las credenciales ingresadas con las que fueron obtenidas de la base de datos. 
+
+En caso de que las credenciales sean válidas, modifica la última fecha de acceso por medio de la función \textquotesingle{}print\+\_\+database\textquotesingle{}. 
+\begin{DoxyParams}{Parameters}
+{\em credentials\mbox{[}2\mbox{]}\mbox{[}\+S\+T\+R\+\_\+\+L\+E\+N\mbox{]}} & Credenciales ingresadas por el usuario. \\
+\hline
+{\em data\mbox{[}\+C\+O\+L\+U\+M\+N\+A\+S\mbox{]}\mbox{[}\+S\+T\+R\+\_\+\+L\+E\+N\mbox{]}} & Datos obtenidos de la BD. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Si el usuario está bloqueado o si la constraseña es correcta o no. 
+\end{DoxyReturn}
+\mbox{\Hypertarget{auth__service_8c_a489976570d39faa024d2176984081cbe}\label{auth__service_8c_a489976570d39faa024d2176984081cbe}} 
+\index{auth\+\_\+service.\+c@{auth\+\_\+service.\+c}!check\+\_\+database@{check\+\_\+database}}
+\index{check\+\_\+database@{check\+\_\+database}!auth\+\_\+service.\+c@{auth\+\_\+service.\+c}}
+\subsubsection{\texorpdfstring{check\+\_\+database()}{check\_database()}}
+{\footnotesize\ttfamily bool check\+\_\+database (\begin{DoxyParamCaption}\item[{char}]{input\mbox{[}2\mbox{]}\mbox{[}\+S\+T\+R\+\_\+\+L\+E\+N\mbox{]},  }\item[{char}]{database\mbox{[}\+C\+O\+L\+U\+M\+N\+A\+S\mbox{]}\mbox{[}\+S\+T\+R\+\_\+\+L\+E\+N\mbox{]} }\end{DoxyParamCaption})}
+
+
+
+Función encargada de verificar si el usuario ingresado se encuentra almacenado en la base de datos (usuarios\+\_\+database.\+txt). 
+
+En caso de que el usuario exista, se guardan los datos obtenidos en el arreglo 2D \textquotesingle{}database\textquotesingle{}. 
+\begin{DoxyParams}{Parameters}
+{\em input\mbox{[}2\mbox{]}\mbox{[}\+S\+T\+R\+\_\+\+L\+E\+N\mbox{]}} & Credenciales ingresadas por el usuario. \\
+\hline
+{\em database\mbox{[}\+C\+O\+L\+U\+M\+N\+A\+S\mbox{]}\mbox{[}\+S\+T\+R\+\_\+\+L\+E\+N\mbox{]}} & Datos obtenidos de la BD. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Si el usuario ingresado existe en la BD. 
+\end{DoxyReturn}
+\mbox{\Hypertarget{auth__service_8c_aef7cc33fdff4a9e118f979d5757abea2}\label{auth__service_8c_aef7cc33fdff4a9e118f979d5757abea2}} 
+\index{auth\+\_\+service.\+c@{auth\+\_\+service.\+c}!get\+\_\+date@{get\+\_\+date}}
+\index{get\+\_\+date@{get\+\_\+date}!auth\+\_\+service.\+c@{auth\+\_\+service.\+c}}
+\subsubsection{\texorpdfstring{get\+\_\+date()}{get\_date()}}
+{\footnotesize\ttfamily void get\+\_\+date (\begin{DoxyParamCaption}\item[{char}]{date\mbox{[}20\mbox{]} }\end{DoxyParamCaption})}
+
+
+
+Función encargada de obtener la fecha actual. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em date\mbox{[}20\mbox{]}} & Fecha actual. \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{auth__service_8c_a41e614be9cd359af7e88941381c38b38}\label{auth__service_8c_a41e614be9cd359af7e88941381c38b38}} 
+\index{auth\+\_\+service.\+c@{auth\+\_\+service.\+c}!get\+\_\+lines@{get\+\_\+lines}}
+\index{get\+\_\+lines@{get\+\_\+lines}!auth\+\_\+service.\+c@{auth\+\_\+service.\+c}}
+\subsubsection{\texorpdfstring{get\+\_\+lines()}{get\_lines()}}
+{\footnotesize\ttfamily int get\+\_\+lines (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Obtiene la cantidad de usuarios registrados en la base de datos. 
+
+\begin{DoxyReturn}{Returns}
+Cantidad de usuerios registrados. 
+\end{DoxyReturn}
+\mbox{\Hypertarget{auth__service_8c_a6fe480b4962a2d2f21c8aba709c90a79}\label{auth__service_8c_a6fe480b4962a2d2f21c8aba709c90a79}} 
+\index{auth\+\_\+service.\+c@{auth\+\_\+service.\+c}!login@{login}}
+\index{login@{login}!auth\+\_\+service.\+c@{auth\+\_\+service.\+c}}
+\subsubsection{\texorpdfstring{login()}{login()}}
+{\footnotesize\ttfamily void login (\begin{DoxyParamCaption}\item[{char}]{buf\mbox{[}\+S\+T\+R\+\_\+\+L\+E\+N\mbox{]},  }\item[{char}]{credentials\mbox{[}2\mbox{]}\mbox{[}\+S\+T\+R\+\_\+\+L\+E\+N\mbox{]} }\end{DoxyParamCaption})}
+
+
+
+Función encargada de tomar las credenciales (usuario y contraseña) para el login. 
+
+Estas credenciales se guardan en la estructura \textquotesingle{}log\+\_\+msg\textquotesingle{} con el fin de enviar las credenciales a \textquotesingle{}auth\+\_\+service\textquotesingle{}. 
+\begin{DoxyParams}{Parameters}
+{\em buf\mbox{[}\+S\+T\+R\+\_\+\+L\+E\+N\mbox{]}} & Mensaje con las credenciales del usuario. \\
+\hline
+{\em credentials\mbox{[}2\mbox{]}\mbox{[}\+S\+T\+R\+\_\+\+L\+E\+N\mbox{]}} & Credenciales separadas. \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{auth__service_8c_a840291bc02cba5474a4cb46a9b9566fe}\label{auth__service_8c_a840291bc02cba5474a4cb46a9b9566fe}} 
+\index{auth\+\_\+service.\+c@{auth\+\_\+service.\+c}!main@{main}}
+\index{main@{main}!auth\+\_\+service.\+c@{auth\+\_\+service.\+c}}
+\subsubsection{\texorpdfstring{main()}{main()}}
+{\footnotesize\ttfamily int main (\begin{DoxyParamCaption}\item[{void}]{ }\end{DoxyParamCaption})}
+
+$<$ Almacena las credenciales recibidas.
+
+$<$ Almacena los datos obtenidos de la BD. \mbox{\Hypertarget{auth__service_8c_ac392e2673ef515d913cb142e6ad3d54d}\label{auth__service_8c_ac392e2673ef515d913cb142e6ad3d54d}} 
+\index{auth\+\_\+service.\+c@{auth\+\_\+service.\+c}!print\+\_\+database@{print\+\_\+database}}
+\index{print\+\_\+database@{print\+\_\+database}!auth\+\_\+service.\+c@{auth\+\_\+service.\+c}}
+\subsubsection{\texorpdfstring{print\+\_\+database()}{print\_database()}}
+{\footnotesize\ttfamily void print\+\_\+database (\begin{DoxyParamCaption}\item[{int}]{msqid,  }\item[{struct \hyperlink{structmsg}{msg}}]{buf }\end{DoxyParamCaption})}
+
+
+
+Función encargada de imprimir los datos que se encuentran registrados en la base de datos (usuarios\+\_\+database.\+txt). 
+
+
+\begin{DoxyParams}{Parameters}
+{\em msqid} & ID de la cola de mensajes. \\
+\hline
+{\em buf} & Estructura para enviar los mensajes. \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{auth__service_8c_a29406420d77bef9c011fbd129f45e690}\label{auth__service_8c_a29406420d77bef9c011fbd129f45e690}} 
+\index{auth\+\_\+service.\+c@{auth\+\_\+service.\+c}!replace@{replace}}
+\index{replace@{replace}!auth\+\_\+service.\+c@{auth\+\_\+service.\+c}}
+\subsubsection{\texorpdfstring{replace()}{replace()}}
+{\footnotesize\ttfamily void replace (\begin{DoxyParamCaption}\item[{char $\ast$}]{str,  }\item[{const char $\ast$}]{old,  }\item[{const char $\ast$}]{new }\end{DoxyParamCaption})}
+
+
+
+Función encargada de reemplazar en una línea los campos que se pasen como parámetros. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em str} & Linea que contiene los datos del usuario. \\
+\hline
+{\em old} & Valor a reemplazar. \\
+\hline
+{\em new} & Nuevo valor. \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{auth__service_8c_a292ce7421f92e5a9b0ae8b592a21bd77}\label{auth__service_8c_a292ce7421f92e5a9b0ae8b592a21bd77}} 
+\index{auth\+\_\+service.\+c@{auth\+\_\+service.\+c}!write\+\_\+database@{write\+\_\+database}}
+\index{write\+\_\+database@{write\+\_\+database}!auth\+\_\+service.\+c@{auth\+\_\+service.\+c}}
+\subsubsection{\texorpdfstring{write\+\_\+database()}{write\_database()}}
+{\footnotesize\ttfamily void write\+\_\+database (\begin{DoxyParamCaption}\item[{char}]{data\mbox{[}\+C\+O\+L\+U\+M\+N\+A\+S\mbox{]}\mbox{[}\+S\+T\+R\+\_\+\+L\+E\+N\mbox{]},  }\item[{const char}]{t,  }\item[{const char $\ast$}]{new }\end{DoxyParamCaption})}
+
+
+
+Función encargada de modificar los datos que se encuentran registrados en la base de datos (usuarios\+\_\+database.\+txt). 
+
+
+\begin{DoxyParams}{Parameters}
+{\em data\mbox{[}\+C\+O\+L\+U\+M\+N\+A\+S\mbox{]}\mbox{[}\+S\+T\+R\+\_\+\+L\+E\+N\mbox{]}} & Datos del usuario a modificar. \\
+\hline
+{\em t} & Valor a modificar (F\+E\+C\+HA o P\+A\+S\+S\+WD). \\
+\hline
+{\em new} & Nuevo valor. \\
+\hline
+\end{DoxyParams}
+
+
+\subsection{Variable Documentation}
+\mbox{\Hypertarget{auth__service_8c_ac4ea108764c8e78de5927da08bc0af95}\label{auth__service_8c_ac4ea108764c8e78de5927da08bc0af95}} 
+\index{auth\+\_\+service.\+c@{auth\+\_\+service.\+c}!date@{date}}
+\index{date@{date}!auth\+\_\+service.\+c@{auth\+\_\+service.\+c}}
+\subsubsection{\texorpdfstring{date}{date}}
+{\footnotesize\ttfamily char date\mbox{[}20\mbox{]}}
+
+
+
+Fecha actual. 
+

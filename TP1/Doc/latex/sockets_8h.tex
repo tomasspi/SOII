@@ -1,0 +1,154 @@
+\hypertarget{sockets_8h}{}\section{inc/sockets.h File Reference}
+\label{sockets_8h}\index{inc/sockets.\+h@{inc/sockets.\+h}}
+{\ttfamily \#include $<$stdint.\+h$>$}\newline
+\subsection*{Macros}
+\begin{DoxyCompactItemize}
+\item 
+\#define \hyperlink{sockets_8h_a65010a1af7aa9bb2dd491140d05a582d}{P\+O\+R\+T\+\_\+\+PS}~4444
+\begin{DoxyCompactList}\small\item\em Puerto para \textquotesingle{}primary\+\_\+server\textquotesingle{}. \end{DoxyCompactList}\item 
+\#define \hyperlink{sockets_8h_a4fbaa706eeeebdf8f706c6957ee92990}{P\+O\+R\+T\+\_\+\+FI}~5555
+\begin{DoxyCompactList}\small\item\em Puerto para \textquotesingle{}files\+\_\+service\textquotesingle{}. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{sockets_8h_af5b27449abdfc22a937250696492e03f}\label{sockets_8h_af5b27449abdfc22a937250696492e03f}} 
+\#define \hyperlink{sockets_8h_af5b27449abdfc22a937250696492e03f}{S\+T\+R\+\_\+\+L\+EN}~1024
+\begin{DoxyCompactList}\small\item\em Largo de los strings. \end{DoxyCompactList}\item 
+\#define \hyperlink{sockets_8h_a627232ce5925b563116303f26aa87a92}{S\+V\+\_\+\+IP}~\char`\"{}127.\+0.\+0.\+1\char`\"{}
+\begin{DoxyCompactList}\small\item\em Dirección IP del servidor. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+ssize\+\_\+t \hyperlink{sockets_8h_ae4b279125c6d6e41c498a18844e3abe5}{send\+\_\+cmd} (int sockfd, void $\ast$cmd)
+\begin{DoxyCompactList}\small\item\em Escribe en el socket deseado un mensaje. \end{DoxyCompactList}\item 
+ssize\+\_\+t \hyperlink{sockets_8h_a485b7976b28a71286ea79e749b7ff2df}{recv\+\_\+cmd} (int sockfd, void $\ast$cmd)
+\begin{DoxyCompactList}\small\item\em Lee lo que se encuentra en el socket. \end{DoxyCompactList}\item 
+int \hyperlink{sockets_8h_a5a073a2590fb0f8973bcc695b96a7bf7}{create\+\_\+svsocket} (uint16\+\_\+t port)
+\begin{DoxyCompactList}\small\item\em Función encargada de crear el socket en el puerto pedido. \end{DoxyCompactList}\item 
+int \hyperlink{sockets_8h_aac88829007f4d2095297f983ab17f48a}{create\+\_\+clsocket} (uint16\+\_\+t port)
+\begin{DoxyCompactList}\small\item\em Función encargada de conectar al cliente en el puerto del servidor. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+\begin{DoxyAuthor}{Author}
+Tomás Santiago Piñero 
+\end{DoxyAuthor}
+
+
+\subsection{Macro Definition Documentation}
+\mbox{\Hypertarget{sockets_8h_a4fbaa706eeeebdf8f706c6957ee92990}\label{sockets_8h_a4fbaa706eeeebdf8f706c6957ee92990}} 
+\index{sockets.\+h@{sockets.\+h}!P\+O\+R\+T\+\_\+\+FI@{P\+O\+R\+T\+\_\+\+FI}}
+\index{P\+O\+R\+T\+\_\+\+FI@{P\+O\+R\+T\+\_\+\+FI}!sockets.\+h@{sockets.\+h}}
+\subsubsection{\texorpdfstring{P\+O\+R\+T\+\_\+\+FI}{PORT\_FI}}
+{\footnotesize\ttfamily \#define P\+O\+R\+T\+\_\+\+FI~5555}
+
+
+
+Puerto para \textquotesingle{}files\+\_\+service\textquotesingle{}. 
+
+\mbox{\Hypertarget{sockets_8h_a65010a1af7aa9bb2dd491140d05a582d}\label{sockets_8h_a65010a1af7aa9bb2dd491140d05a582d}} 
+\index{sockets.\+h@{sockets.\+h}!P\+O\+R\+T\+\_\+\+PS@{P\+O\+R\+T\+\_\+\+PS}}
+\index{P\+O\+R\+T\+\_\+\+PS@{P\+O\+R\+T\+\_\+\+PS}!sockets.\+h@{sockets.\+h}}
+\subsubsection{\texorpdfstring{P\+O\+R\+T\+\_\+\+PS}{PORT\_PS}}
+{\footnotesize\ttfamily \#define P\+O\+R\+T\+\_\+\+PS~4444}
+
+
+
+Puerto para \textquotesingle{}primary\+\_\+server\textquotesingle{}. 
+
+\mbox{\Hypertarget{sockets_8h_a627232ce5925b563116303f26aa87a92}\label{sockets_8h_a627232ce5925b563116303f26aa87a92}} 
+\index{sockets.\+h@{sockets.\+h}!S\+V\+\_\+\+IP@{S\+V\+\_\+\+IP}}
+\index{S\+V\+\_\+\+IP@{S\+V\+\_\+\+IP}!sockets.\+h@{sockets.\+h}}
+\subsubsection{\texorpdfstring{S\+V\+\_\+\+IP}{SV\_IP}}
+{\footnotesize\ttfamily \#define S\+V\+\_\+\+IP~\char`\"{}127.\+0.\+0.\+1\char`\"{}}
+
+
+
+Dirección IP del servidor. 
+
+
+
+\subsection{Function Documentation}
+\mbox{\Hypertarget{sockets_8h_aac88829007f4d2095297f983ab17f48a}\label{sockets_8h_aac88829007f4d2095297f983ab17f48a}} 
+\index{sockets.\+h@{sockets.\+h}!create\+\_\+clsocket@{create\+\_\+clsocket}}
+\index{create\+\_\+clsocket@{create\+\_\+clsocket}!sockets.\+h@{sockets.\+h}}
+\subsubsection{\texorpdfstring{create\+\_\+clsocket()}{create\_clsocket()}}
+{\footnotesize\ttfamily int create\+\_\+clsocket (\begin{DoxyParamCaption}\item[{uint16\+\_\+t}]{port }\end{DoxyParamCaption})}
+
+
+
+Función encargada de conectar al cliente en el puerto del servidor. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em port} & Puerto al que se desea conectar. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+File descriptor del socket conectado. 
+\end{DoxyReturn}
+\mbox{\Hypertarget{sockets_8h_a5a073a2590fb0f8973bcc695b96a7bf7}\label{sockets_8h_a5a073a2590fb0f8973bcc695b96a7bf7}} 
+\index{sockets.\+h@{sockets.\+h}!create\+\_\+svsocket@{create\+\_\+svsocket}}
+\index{create\+\_\+svsocket@{create\+\_\+svsocket}!sockets.\+h@{sockets.\+h}}
+\subsubsection{\texorpdfstring{create\+\_\+svsocket()}{create\_svsocket()}}
+{\footnotesize\ttfamily int create\+\_\+svsocket (\begin{DoxyParamCaption}\item[{uint16\+\_\+t}]{port }\end{DoxyParamCaption})}
+
+
+
+Función encargada de crear el socket en el puerto pedido. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em port} & Puerto al que se desea conectar. s$\ast$ \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+File descriptor del socket creado.
+\end{DoxyReturn}
+Función encargada de crear el socket en el puerto pedido.
+
+
+\begin{DoxyParams}{Parameters}
+{\em port} & Puerto al que se desea conectar. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+File descriptor del socket creado. 
+\end{DoxyReturn}
+\mbox{\Hypertarget{sockets_8h_a485b7976b28a71286ea79e749b7ff2df}\label{sockets_8h_a485b7976b28a71286ea79e749b7ff2df}} 
+\index{sockets.\+h@{sockets.\+h}!recv\+\_\+cmd@{recv\+\_\+cmd}}
+\index{recv\+\_\+cmd@{recv\+\_\+cmd}!sockets.\+h@{sockets.\+h}}
+\subsubsection{\texorpdfstring{recv\+\_\+cmd()}{recv\_cmd()}}
+{\footnotesize\ttfamily ssize\+\_\+t recv\+\_\+cmd (\begin{DoxyParamCaption}\item[{int}]{sockfd,  }\item[{void $\ast$}]{cmd }\end{DoxyParamCaption})}
+
+
+
+Lee lo que se encuentra en el socket. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em sockfd} & Socket del que se desea leer el mensaje. \\
+\hline
+{\em cmd} & Comando enviado por el usuario. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Si el read fue exitoso. 
+\end{DoxyReturn}
+\mbox{\Hypertarget{sockets_8h_ae4b279125c6d6e41c498a18844e3abe5}\label{sockets_8h_ae4b279125c6d6e41c498a18844e3abe5}} 
+\index{sockets.\+h@{sockets.\+h}!send\+\_\+cmd@{send\+\_\+cmd}}
+\index{send\+\_\+cmd@{send\+\_\+cmd}!sockets.\+h@{sockets.\+h}}
+\subsubsection{\texorpdfstring{send\+\_\+cmd()}{send\_cmd()}}
+{\footnotesize\ttfamily ssize\+\_\+t send\+\_\+cmd (\begin{DoxyParamCaption}\item[{int}]{sockfd,  }\item[{void $\ast$}]{cmd }\end{DoxyParamCaption})}
+
+
+
+Escribe en el socket deseado un mensaje. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em sockfd} & Socket en el que se desea escribir el mensaje. \\
+\hline
+{\em cmd} & Comando enviado por el usuario. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Si el write fue exitoso. 
+\end{DoxyReturn}

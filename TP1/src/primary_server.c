@@ -1,3 +1,13 @@
+/**
+ * @file primary_server.c
+ * @brief
+ * Proceso con el rol de 'middleware'. Es el encargado de establecer las
+ * conexiones y utiliza los procesos 'auth' y 'fileserv' para cumplir los
+ * requerimientos del sistema.
+ *
+ * @author Tomás Santiago Piñero
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -12,26 +22,11 @@
 #include "messages.h"
 #include "sockets.h"
 
-#define USER "user"
-#define FILE "file"
+#define USER 'u'  /**< El comando 'user'. */
+#define FILE 'f'  /**< El comando 'file'. */
+#define LS   "ls" /**< El comando 'ls'. */
 
-/**< Comandos soportados. */
-char *builtins[] =
-{
-  "user ls",
-  "user passwd",
-  "file ls",
-  "file down",
-  "exit"
-};
-
-/**
- * Función encargada de tomar las credenciales (usuario y contraseña) para el
- * login. Estas credenciales se guardan en la estructura 'log_msg' y se la
- * envía al proceso encargado del servicio de autenticación ('auth_service').
- * @param struct log_msg  Mensaje con las credenciales del usuario.
- */
-void login(struct log_msg *log, char buf[MAX]);
+void send_client(ssize_t rw, int newfd, struct msg *buf);
 
 int main(void)
 {
@@ -39,14 +34,13 @@ int main(void)
   int newfd;
 
   ssize_t rw;
-  char msg_buf[MAX];
+  char msg_buf[STR_LEN];
 
-  struct log_msg log;
   struct msg buf;
   int msqid;
   key_t key;
 
-  if ((key = ftok("../src/primary_server.c", 5)) == -1)
+  if ((key = ftok(QU_PATH, 5)) == -1)
   {
     perror("ftok");
     exit(EXIT_FAILURE);
@@ -58,10 +52,10 @@ int main(void)
     exit(EXIT_FAILURE);
   }
 
-  log.mtype = TO_AUTH;
-
   struct sockaddr_in cl_addr;
   uint cl_len;
+
+  printf("Esuchando en puerto %d...\n", PORT_PS);
 
   listen(sockfd, 1);
   cl_len = sizeof(cl_addr);
@@ -78,23 +72,23 @@ int main(void)
 
   close(sockfd);
 
-  int loginf = 1;
+  //int loginf = 1;
 
   int auth_id, files_id, auth_state, files_state;
 
-  if((auth_id = fork()) == -1)
+  if((auth_id = fork()) == -1) //------ Auth de hijo
   {
     perror("fork auth");
     exit(EXIT_FAILURE);
   }
 
   char *arga[] = {"./auth", NULL};
-  char *argf[] = {"./files", NULL};
+  char *argf[] = {"./fileserv", NULL};
 
   if(auth_id == 0) execv(arga[0], arga);
   else
   {
-    if((files_id =  fork()) == -1)
+    if((files_id =  fork()) == -1) //------ Fileserv de hijo
     {
       perror("fork files");
       exit(EXIT_FAILURE);
@@ -108,7 +102,7 @@ int main(void)
 
       while(1)
       {
-        /**< Lectura */
+        //------ Lectura ------
         rw = recv_cmd(newfd,msg_buf);
 
         if(rw == -1)
@@ -116,43 +110,90 @@ int main(void)
           perror("read");
           exit(EXIT_FAILURE);
         }
-        /**< Fin Lectura */
+        //------ Fin Lectura ------
 
-        if(loginf)
-        {
-          /**< Check login. */
-          login(&log, msg_buf);
-
-          msgsnd(msqid, &log, sizeof(log.login), 0);
-
-          msgrcv(msqid, &buf, sizeof(buf.msg), TO_PRIM, 0);
-
-          if(!strcmp(buf.msg,"A")) loginf = 0;
-          /**<End login. */
-        }
-
-        /**< Escritura */
-        rw = send_cmd(newfd, buf.msg);
-
-        if(rw == -1)
-        {
-          perror("write");
-          exit(EXIT_FAILURE);
-        }
-        msg_buf[strlen(msg_buf)-1] = '\0';
-        /**< Escritura */
-
-        if(!strcmp("exit",msg_buf))
+        if(!strcmp(msg_buf,"exit"))
         {
           close(newfd);
+          buf.mtype = TO_AUTH;
+          strcpy(buf.msg, "exit");
+
+          msgsnd(msqid, &buf, sizeof(buf.msg), IPC_NOWAIT);
+
+          buf.mtype = TO_FILE;
+          msgsnd(msqid, &buf, sizeof(buf.msg), IPC_NOWAIT);
+
+          if (msgctl(msqid, IPC_RMID, NULL) == -1) /* Destruye la cola */
+          {
+            perror("msgctl");
+            exit(EXIT_FAILURE);
+          }
           exit(EXIT_SUCCESS);
         }
-      }
 
-      if (msgctl(msqid, IPC_RMID, NULL) == -1) /* Destruye la cola */
-      {
-        perror("msgctl");
-        exit(1);
+        //------ Identificación y envío de mensaje ------
+        if(strchr(msg_buf,',') != NULL)
+        {
+          buf.mtype = TO_AUTH;
+          strcpy(buf.msg, msg_buf);
+
+          msgsnd(msqid, &buf, sizeof(buf.msg), 0);
+
+          msgrcv(msqid, &buf, sizeof(buf.msg), TO_PRIM, 0);
+          send_client(rw, newfd, &buf);
+        } else
+        {
+          int i = 0;
+          char *comando[5], backup[STR_LEN];
+          strcpy(backup, msg_buf);
+
+          char *tmp = strtok(backup, " ");
+          while(tmp != NULL)
+          {
+            comando[i] = tmp;
+            i++;
+            tmp = strtok(NULL," ");
+          }
+
+          switch (comando[0][0])
+          {
+            case USER:
+              buf.mtype = TO_AUTH;
+              if(!strcmp(comando[1],"ls"))
+              {
+                strcpy(buf.msg, comando[1]);
+                msgsnd(msqid, &buf, sizeof(buf.msg), 0);
+
+                int print = 0;
+                msgrcv(msqid, &buf, sizeof(buf.msg), TO_PRIM, 0);
+                sscanf(buf.msg, "%d", &print);
+                print += 3;
+
+                // sleep(2);
+                // struct msqid_ds details;
+                // msgctl(msqid, IPC_STAT, &details);
+                // printf("Details: %ld\n", details.msg_qnum);
+                // fflush(stdout);
+
+                while(print != 0)
+                {
+                  msgrcv(msqid, &buf, sizeof(buf.msg), TO_PRIM, 0);
+                  send_client(rw, newfd, &buf);
+                  print--;
+                  printf("%d\n", print);
+                }
+
+              }
+              break;
+
+            case FILE:
+
+              break;
+          }
+        }
+        //------ Fin de identificación y envío de mensaje ------
+
+
       }
     }
   }
@@ -161,19 +202,22 @@ int main(void)
 }
 
 /**
- * Función encargada de tomar las credenciales (usuario y contraseña) para el
- * login. Estas credenciales se guardan en la estructura 'log_msg' con el
- * fin de enviar las credenciales a 'auth_service'.
- * @param struct log_msg  Mensaje con las credenciales del usuario.
+ * @brief
+ * Envía el mensaje recibido por los procesos hijos ('auth_service' o
+ * 'files_service') al cliente.
+ * @param rw    Resultado de la escritura en el socket.
+ * @param newfd File descriptor perteneciente al socket.
+ * @param buf   Mensaje a enviar.
  */
-void login(struct log_msg *log, char buf[MAX])
+void send_client(ssize_t rw, int newfd, struct msg *buf)
 {
-  char *tok;
-  tok = strtok(buf,",");
+  /**< Escritura */
+  rw = send_cmd(newfd, buf->msg);
 
-  strcpy(log->login.username,tok);
-
-  tok = strtok(NULL,"");
-
-  strcpy(log->login.password,tok);
+  if(rw == -1)
+  {
+    perror("write");
+    exit(EXIT_FAILURE);
+  }
+  /**< Escritura */
 }

@@ -1,3 +1,9 @@
+/**
+ * @file sockets.c
+ *
+ * @author Tomás Santiago Piñero
+ */
+
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -9,8 +15,10 @@
 #include <stdio.h>
 
 #include "sockets.h"
+#include "messages.h"
 
 /**
+ * @brief
  * Escribe en el socket deseado un mensaje.
  * @param  sockfd Socket en el que se desea escribir el mensaje.
  * @param  cmd    Comando enviado por el usuario.
@@ -18,7 +26,7 @@
  */
 ssize_t send_cmd(int sockfd, void *cmd)
 {
-  char buf[MAX];
+  char buf[STR_LEN];
   strcpy(buf,(char*) cmd);
   ssize_t s;
 
@@ -28,6 +36,7 @@ ssize_t send_cmd(int sockfd, void *cmd)
 }
 
 /**
+ * @brief
  * Lee lo que se encuentra en el socket.
  * @param  sockfd Socket del que se desea leer el mensaje.
  * @param  cmd    Comando enviado por el usuario.
@@ -35,15 +44,16 @@ ssize_t send_cmd(int sockfd, void *cmd)
  */
 ssize_t recv_cmd(int sockfd, void *cmd)
 {
-  char buf[MAX];
+  char buf[STR_LEN];
   ssize_t r;
-  memset(buf, '\0', MAX);
-  r = recv(sockfd, buf, MAX-1, 0);
+  memset(buf, '\0', STR_LEN);
+  r = recv(sockfd, buf, STR_LEN-1, 0);
   strcpy((char *) cmd, buf);
   return r;
 }
 
 /**
+ * @brief
  * Función encargada de crear el socket del servidor en el puerto pedido.
  * @param  port Puerto al que se desea conectar.
  * @return      File descriptor del socket creado.
@@ -66,7 +76,7 @@ int create_svsocket(uint16_t port)
   memset((char *) &sv_addr, 0, sizeof(sv_addr));
 
   sv_addr.sin_family = AF_INET;
-  sv_addr.sin_addr.s_addr = INADDR_ANY;
+  sv_addr.sin_addr.s_addr = inet_addr(SV_IP);
   sv_addr.sin_port = htons(port);
 
   if(bind(sockfd, (struct sockaddr *) &sv_addr, sizeof(sv_addr)) == -1)
@@ -78,6 +88,7 @@ int create_svsocket(uint16_t port)
 }
 
 /**
+ * @brief
  * Función encargada de conectar al cliente en el puerto del servidor.
  * @param  port Puerto al que se desea conectar.
  * @return      File descriptor del socket conectado.
@@ -95,6 +106,7 @@ int create_clsocket(uint16_t port)
     exit(EXIT_FAILURE);
   }
 
+  // server = gethostbyaddr(inet_addr(SV_IP), sizeof(SV_IP), AF_INET);
   server = gethostbyname("localhost");
 
   if (server == NULL)
