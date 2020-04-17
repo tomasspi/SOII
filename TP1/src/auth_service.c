@@ -29,9 +29,9 @@
 
 void login(char buf[STR_LEN], char credentials[2][STR_LEN]);
 void get_date(char date[20]);
-int get_lines();
+int  get_lines();
 void print_database(int msqid, struct msg buf);
-void write_database(char data[COLUMNAS][STR_LEN], const char t, const char *new);
+int  write_database(char data[COLUMNAS][STR_LEN], const char t, const char *new);
 void replace(char *str, const char *old, const char *new);
 bool check_database(char input[2][STR_LEN], char database[COLUMNAS][STR_LEN]);
 int  check_credentials(char credentials[2][STR_LEN], char data[COLUMNAS][STR_LEN]);
@@ -81,8 +81,9 @@ int main(void)
         case ACTIVE:
           strcpy(buf.msg, database[COLUMNAS-1]);
           get_date(date);
-          write_database(database, FECHA, date);
-          tries = 0;
+          if(write_database(database, FECHA, date) != 1)
+            perror("write_database");
+          tries = 0;//listen(msqid, buf);
           break;
 
         case INVALID:
@@ -91,7 +92,8 @@ int main(void)
           if(tries == 0)
           {
             strcpy(buf.msg, "El usuario ha sido bloqueado.\n");
-            write_database(database, STATUS, BLOCKED_Q);
+            if(write_database(database, STATUS, BLOCKED_Q) != 1)
+              perror("write_database");
           }
           break;
       }
@@ -117,11 +119,29 @@ int main(void)
       msgsnd(msqid, &buf, sizeof(buf.msg), 0);
 
       print_database(msqid, buf);
+    } else 
+    {
+      buf.mtype = TO_PRIM;
+
+      if(!strcmp(buf.msg, database[1]))
+      {
+        strcpy(buf.msg, "User and password can't be the same.\n");
+        msgsnd(msqid, &buf, sizeof(buf.msg), 0);
+      } else
+      {
+        if(write_database(database, PASSWD, buf.msg) != 1)
+          perror("write_database");
+        else
+        {
+          strcpy(database[COLUMNAS-3],buf.msg);
+
+          strcpy(buf.msg, "Password changed successfully.\n");
+          msgsnd(msqid, &buf, sizeof(buf.msg), 0);
+        }
+      }
+
     }
   }
-
-
-
 
   return EXIT_SUCCESS;
 }
@@ -275,10 +295,10 @@ void print_database(int msqid, struct msg buf)
  * Función encargada de modificar los datos que se encuentran registrados en la
  * base de datos (usuarios_database.txt).
  * @param data[COLUMNAS][STR_LEN]  Datos del usuario a modificar.
- * @param t                        Valor a modificar (FECHA o PASSWD).
+ * @param t                        Valor a modificar (FECHA, STATUS o PASSWD).
  * @param new                      Nuevo valor.
  */
-void write_database(char data[COLUMNAS][STR_LEN], const char t, const char *new)
+int write_database(char data[COLUMNAS][STR_LEN], const char t, const char *new)
 {
   char string[LINE_LEN];
   FILE *archivo, *reemplazo;
@@ -318,6 +338,7 @@ void write_database(char data[COLUMNAS][STR_LEN], const char t, const char *new)
 
   remove(DB_PATH);
   rename(TMP_PATH, DB_PATH);
+  return 1;
 }
 
 /**

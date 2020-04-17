@@ -27,6 +27,7 @@
 #define LS   "ls" /**< El comando 'ls'. */
 
 void send_client(ssize_t rw, int newfd, struct msg *buf);
+void cmd_invalid(int newfd, char buf[STR_LEN]);
 
 int main(void)
 {
@@ -100,6 +101,7 @@ int main(void)
       waitpid(auth_id, &auth_state, WNOHANG);
       waitpid(files_id, &files_state, WNOHANG);
 
+listen:
       while(1)
       {
         //------ Lectura ------
@@ -155,45 +157,55 @@ int main(void)
             tmp = strtok(NULL," ");
           }
 
-          switch (comando[0][0])
+          if(comando[1] == NULL)
           {
-            case USER:
-              buf.mtype = TO_AUTH;
-              if(!strcmp(comando[1],"ls"))
-              {
-                strcpy(buf.msg, comando[1]);
-                msgsnd(msqid, &buf, sizeof(buf.msg), 0);
-
-                int print = 0;
-                msgrcv(msqid, &buf, sizeof(buf.msg), TO_PRIM, 0);
-                sscanf(buf.msg, "%d", &print);
-                print += 3;
-
-                // sleep(2);
-                // struct msqid_ds details;
-                // msgctl(msqid, IPC_STAT, &details);
-                // printf("Details: %ld\n", details.msg_qnum);
-                // fflush(stdout);
-
-                while(print != 0)
-                {
-                  msgrcv(msqid, &buf, sizeof(buf.msg), TO_PRIM, 0);
-                  send_client(rw, newfd, &buf);
-                  print--;
-                  printf("%d\n", print);
-                }
-
-              }
-              break;
-
-            case FILE:
-
-              break;
+            cmd_invalid(newfd, msg_buf);
+            goto listen;
           }
+
+          if(!strcmp(comando[0], "user"))
+          {
+            buf.mtype = TO_AUTH;
+            if(!strcmp(comando[1],"ls"))
+            {
+              memset(msg_buf, '\0', STR_LEN-1);
+              strcpy(buf.msg, comando[1]);
+              msgsnd(msqid, &buf, sizeof(buf.msg), 0);
+
+              int print = 0;
+              msgrcv(msqid, &buf, sizeof(buf.msg), TO_PRIM, 0);
+              sscanf(buf.msg, "%d", &print);
+              print += 3;
+
+              // struct msqid_ds details;
+              // msgctl(msqid, IPC_STAT, &details);
+              // printf("Details: %ld\n", details.msg_qnum);
+              // fflush(stdout);
+              while(print != 0)
+              {
+                msgrcv(msqid, &buf, sizeof(buf.msg), TO_PRIM, 0);
+                strcat(msg_buf,buf.msg);
+                print--;
+              }
+
+              if(send_cmd(newfd, msg_buf) == -1) perror("write ls");
+            }
+            else if(!strcmp(comando[1],"passwd"))
+            {
+              strcpy(buf.msg, comando[2]);
+
+              msgsnd(msqid, &buf, sizeof(buf.msg), 0);
+
+              msgrcv(msqid, &buf, sizeof(buf.msg), TO_PRIM, 0);
+              send_client(rw, newfd, &buf);
+            } else cmd_invalid(newfd, msg_buf);
+          } else if(!strcmp(comando[0], "file"))
+          {
+
+          } else cmd_invalid(newfd, msg_buf);
         }
+        //memset(buf.msg, '\0', sizeof(buf.msg));
         //------ Fin de identificación y envío de mensaje ------
-
-
       }
     }
   }
@@ -220,4 +232,10 @@ void send_client(ssize_t rw, int newfd, struct msg *buf)
     exit(EXIT_FAILURE);
   }
   /**< Escritura */
+}
+
+void cmd_invalid(int newfd, char buf[STR_LEN])
+{
+  strcpy(buf, "Comando inválido.\n");
+  send_cmd(newfd, buf);
 }

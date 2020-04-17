@@ -127,6 +127,8 @@ void ask_login(char buf[STR_LEN])
  */
 void show_prompt(int32_t sockfd, ssize_t rw, char buffer[STR_LEN])
 {
+  prompt:
+
   while(1)
   {
 		printf("#> ");
@@ -134,6 +136,8 @@ void show_prompt(int32_t sockfd, ssize_t rw, char buffer[STR_LEN])
 		if(fgets(buffer, STR_LEN-1, stdin) == NULL) perror("fgets prompt");
     buffer[strlen(buffer)-1] = '\0';
 
+    if(buffer[0] == '\0') goto prompt;
+    
 		rw = send_cmd(sockfd, buffer);
 
     if(rw == -1)
@@ -144,6 +148,7 @@ void show_prompt(int32_t sockfd, ssize_t rw, char buffer[STR_LEN])
 
 		// Verificando si se escribió: exit
     if(!strcmp(buffer, "exit")) exit(EXIT_SUCCESS);
+
 
     rw = recv_cmd(sockfd, buffer);
 
