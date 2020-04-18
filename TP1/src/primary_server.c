@@ -26,8 +26,9 @@
 #define FILE 'f'  /**< El comando 'file'. */
 #define LS   "ls" /**< El comando 'ls'. */
 
-void send_client(ssize_t rw, int newfd, struct msg *buf);
 void cmd_invalid(int newfd, char buf[STR_LEN]);
+void print_ls(char cmd[1], char buff[STR_LEN], int newfd, int msqid, struct msg buf);
+void send_client(ssize_t rw, int newfd, struct msg *buf);
 
 int main(void)
 {
@@ -110,7 +111,7 @@ listen:
         if(rw == -1)
         {
           perror("read");
-          exit(EXIT_FAILURE);
+          goto listen;
         }
         //------ Fin Lectura ------
 
@@ -134,7 +135,7 @@ listen:
         }
 
         //------ Identificación y envío de mensaje ------
-        if(strchr(msg_buf,',') != NULL)
+        if(strchr(msg_buf,',') != NULL) //------ Inicio de sesión ------
         {
           buf.mtype = TO_AUTH;
           strcpy(buf.msg, msg_buf);
@@ -143,7 +144,7 @@ listen:
 
           msgrcv(msqid, &buf, sizeof(buf.msg), TO_PRIM, 0);
           send_client(rw, newfd, &buf);
-        } else
+        } else //------ Es un comando ------
         {
           int i = 0;
           char *comando[5], backup[STR_LEN];
@@ -167,29 +168,8 @@ listen:
           {
             buf.mtype = TO_AUTH;
             if(!strcmp(comando[1],"ls"))
-            {
-              memset(msg_buf, '\0', STR_LEN-1);
-              strcpy(buf.msg, comando[1]);
-              msgsnd(msqid, &buf, sizeof(buf.msg), 0);
+              print_ls(comando[1], msg_buf, newfd, msqid, buf);
 
-              int print = 0;
-              msgrcv(msqid, &buf, sizeof(buf.msg), TO_PRIM, 0);
-              sscanf(buf.msg, "%d", &print);
-              print += 3;
-
-              // struct msqid_ds details;
-              // msgctl(msqid, IPC_STAT, &details);
-              // printf("Details: %ld\n", details.msg_qnum);
-              // fflush(stdout);
-              while(print != 0)
-              {
-                msgrcv(msqid, &buf, sizeof(buf.msg), TO_PRIM, 0);
-                strcat(msg_buf,buf.msg);
-                print--;
-              }
-
-              if(send_cmd(newfd, msg_buf) == -1) perror("write ls");
-            }
             else if(!strcmp(comando[1],"passwd"))
             {
               strcpy(buf.msg, comando[2]);
@@ -199,12 +179,17 @@ listen:
               msgrcv(msqid, &buf, sizeof(buf.msg), TO_PRIM, 0);
               send_client(rw, newfd, &buf);
             } else cmd_invalid(newfd, msg_buf);
-          } else if(!strcmp(comando[0], "file"))
+          }
+          else if(!strcmp(comando[0], "file"))
           {
+            buf.mtype = TO_FILE;
+            if(!strcmp(comando[1],"ls"))
+            {
+              print_ls(comando[1], msg_buf, newfd, msqid, buf);
+            };
 
           } else cmd_invalid(newfd, msg_buf);
         }
-        //memset(buf.msg, '\0', sizeof(buf.msg));
         //------ Fin de identificación y envío de mensaje ------
       }
     }
@@ -234,8 +219,35 @@ void send_client(ssize_t rw, int newfd, struct msg *buf)
   /**< Escritura */
 }
 
+/**
+ * @brief
+ * Función encargada de decir al cliente que el comando ingresado no es válido.
+ * @param newfd File descriptor perteneciente al socket.
+ * @param buf   Mensaje a enviar.
+ */
 void cmd_invalid(int newfd, char buf[STR_LEN])
 {
   strcpy(buf, "Comando inválido.\n");
   send_cmd(newfd, buf);
+}
+
+/**
+ * @brief
+ * Función encargada de enviar el comando 'ls' a cualquiera de los dos servicios
+ * y esperar la respuesta del mismo.
+ * @param cmd    Comando a enviar (ls).
+ * @param buff   Mensaje para enviar al cliente.
+ * @param newfd  File descriptor perteneciente al socket client-server.
+ * @param msqid  ID de la cola de mensajes.
+ * @param buf    Mensajes de la cola.
+ */
+void print_ls(char cmd[1], char buff[STR_LEN], int newfd, int msqid, struct msg buf)
+{
+  memset(buff, '\0', STR_LEN-1);
+  strcpy(buf.msg, cmd);
+  msgsnd(msqid, &buf, sizeof(buf.msg), 0);
+
+  msgrcv(msqid, &buf, sizeof(buf.msg), TO_PRIM, 0);
+
+  if(send_cmd(newfd, buf.msg) == -1) perror("write ls");
 }

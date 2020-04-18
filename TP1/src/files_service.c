@@ -4,7 +4,7 @@
  * Proceso encargado de proveer las funcionalidades relacionadas a las
  * imágenes disponibles para decargar y la transferencia de la imagen
  * seleccionada.
- * 
+ *
  * @author Tomás Santiago Piñero
  */
 
@@ -16,9 +16,15 @@
 #include <sys/msg.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <dirent.h>
 
 #include "messages.h"
 #include "sockets.h"
+
+#define IMGS_PATH "../imgs"
+
+void print_images(int msqid, struct msg buf);
+int get_images();
 
 int main(void)
 {
@@ -48,8 +54,74 @@ int main(void)
 
     if(!strcmp(buf.msg, "exit")) exit(EXIT_SUCCESS);
 
+    if(!strcmp(buf.msg,"ls"))
+    {
+      buf.mtype = TO_PRIM;
+      print_images(msqid, buf);
+    }
+    else
+    {
+      buf.mtype = TO_PRIM;
 
+      //if(!strcmp(buf.msg, database[1]))
+    }
   }
 
   return EXIT_SUCCESS;
+}
+
+/**
+ * @brief
+ * Función encargada de imprimir las imágenes disponibles para descargar.
+ * @param msqid ID de la cola de mensajes.
+ * @param buf   Estructura para enviar los mensajes.
+ */
+void print_images(int msqid, struct msg buf)
+{
+  DIR *dir;
+  struct dirent *direct;
+  char msg[STR_LEN] = "";
+
+  dir = opendir(IMGS_PATH);
+
+  if(dir == NULL)
+    perror("print imgs directory");
+
+  strcat(msg, "============================================================\n");
+
+  sprintf(buf.msg, "%-35s %-15s %-15s\n", "Imagen", "Tamaño [MB]", "MD5");
+  strcat(msg, buf.msg);
+
+  strcat(msg, "============================================================\n");
+
+  while ((direct = readdir(dir)) != NULL)
+  {
+    if (direct->d_type == DT_REG)
+    {
+      long size = 0;
+
+      FILE *file;
+      char path[100];
+      strcpy(path, IMGS_PATH);
+      strcat(path,"/");
+      strcat(path,direct->d_name);
+
+      file = fopen(path, "r");
+      if(file == NULL) perror("file");
+
+      fseek(file, 0, SEEK_END);
+      size = ftell(file);
+      size /= 1000000;
+      fclose(file);
+
+      sprintf(buf.msg, "%-35s %-14ld %-15s\n", direct->d_name, size, "MD5");
+      strcat(msg, buf.msg);
+    }
+  }
+  closedir(dir);
+  strcpy(buf.msg, msg);
+  msgsnd(msqid, &buf, sizeof(buf.msg), 0);
+
+  memset(msg, '\0', STR_LEN-1);
+  memset(buf.msg, '\0', sizeof(buf.msg));
 }

@@ -137,19 +137,18 @@ void show_prompt(int32_t sockfd, ssize_t rw, char buffer[STR_LEN])
     buffer[strlen(buffer)-1] = '\0';
 
     if(buffer[0] == '\0') goto prompt;
-    
+
 		rw = send_cmd(sockfd, buffer);
 
     if(rw == -1)
     {
       perror("write");
-      exit(EXIT_FAILURE);
+      goto prompt;
     }
 
-		// Verificando si se escribió: exit
     if(!strcmp(buffer, "exit")) exit(EXIT_SUCCESS);
 
-
+read:
     rw = recv_cmd(sockfd, buffer);
 
     printf("%s\n", buffer);
@@ -157,7 +156,7 @@ void show_prompt(int32_t sockfd, ssize_t rw, char buffer[STR_LEN])
     if(rw == -1)
     {
       perror("read");
-      exit(EXIT_FAILURE);
+      goto read;
     }
 	}
 }

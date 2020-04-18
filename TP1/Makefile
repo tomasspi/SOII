@@ -2,6 +2,7 @@
 IDIR = ./inc
 SDIR = ./src
 ODIR = ./bin
+DDIR = ./Doc
 
 # Binarios
 SV = server
@@ -25,10 +26,11 @@ server:
 	$(CC) $(CFLAGS) $(SDIR)/sockets.c $(SDIR)/files_service.c -o $(ODIR)/$(FI)
 
 doc:
+	mkdir $(DDIR)
 	doxygen doxyconf
 	firefox Doc/html/index.html
 
 .PHONY: clean
 
 clean:
-	rm -Rf $(ODIR)
+	rm -Rf $(ODIR) $(DDIR)

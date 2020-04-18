@@ -30,7 +30,7 @@ ssize_t send_cmd(int sockfd, void *cmd)
   strcpy(buf,(char*) cmd);
   ssize_t s;
 
-  s = write(sockfd, buf, strlen(buf));
+  s = send(sockfd, buf, strlen(buf), 0);
 
   return s;
 }
@@ -97,7 +97,6 @@ int create_clsocket(uint16_t port)
 {
   int sockfd;
   struct sockaddr_in sv_addr;
-  struct hostent *server;
 
   sockfd = socket( AF_INET, SOCK_STREAM, 0 );
   if ( sockfd == -1 )
@@ -106,18 +105,10 @@ int create_clsocket(uint16_t port)
     exit(EXIT_FAILURE);
   }
 
-  // server = gethostbyaddr(inet_addr(SV_IP), sizeof(SV_IP), AF_INET);
-  server = gethostbyname("localhost");
-
-  if (server == NULL)
-  {
-    perror("get server");
-    exit(EXIT_FAILURE);
-  }
-
   memset((char *) &sv_addr, '0', sizeof(sv_addr));
+
   sv_addr.sin_family = AF_INET;
-  bcopy((char *)server->h_addr,(char *)&sv_addr.sin_addr.s_addr,(size_t) server->h_length);
+  sv_addr.sin_addr.s_addr = inet_addr(SV_IP);
   sv_addr.sin_port = htons(port);
 
   if(connect(sockfd, (struct sockaddr *)&sv_addr, sizeof(sv_addr)) == -1)

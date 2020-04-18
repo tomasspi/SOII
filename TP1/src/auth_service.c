@@ -29,7 +29,6 @@
 
 void login(char buf[STR_LEN], char credentials[2][STR_LEN]);
 void get_date(char date[20]);
-int  get_lines();
 void print_database(int msqid, struct msg buf);
 int  write_database(char data[COLUMNAS][STR_LEN], const char t, const char *new);
 void replace(char *str, const char *old, const char *new);
@@ -61,8 +60,8 @@ int main(void)
     exit(EXIT_FAILURE);
   }
 
-  //buf.mtype = TO_PRIM;
   int tries = 3;
+  int auth = 0;
 
   do
   {
@@ -83,7 +82,7 @@ int main(void)
           get_date(date);
           if(write_database(database, FECHA, date) != 1)
             perror("write_database");
-          tries = 0;//listen(msqid, buf);
+          auth = 1;
           break;
 
         case INVALID:
@@ -101,11 +100,10 @@ int main(void)
 
     buf.mtype = TO_PRIM;
     msgsnd(msqid, &buf, sizeof(buf.msg), 0);
-  } while(tries);
+  } while(tries && !auth);
 
-  while(1)
+  while(auth)
   {
-    printf("%s\n", "Te escucho con todo el amor del mundo bb");
     msgrcv(msqid, &buf, sizeof(buf.msg), TO_AUTH, 0);
 
     if(!strcmp(buf.msg, "exit")) exit(EXIT_SUCCESS);
@@ -113,13 +111,9 @@ int main(void)
     if(!strcmp(buf.msg,"ls"))
     {
       buf.mtype = TO_PRIM;
-
-      int lineas = get_lines();
-      sprintf(buf.msg, "%d", lineas);
-      msgsnd(msqid, &buf, sizeof(buf.msg), 0);
-
       print_database(msqid, buf);
-    } else 
+    }
+    else
     {
       buf.mtype = TO_PRIM;
 
@@ -139,7 +133,6 @@ int main(void)
           msgsnd(msqid, &buf, sizeof(buf.msg), 0);
         }
       }
-
     }
   }
 
@@ -250,7 +243,7 @@ int check_credentials(char credentials[2][STR_LEN], char data[COLUMNAS][STR_LEN]
 void print_database(int msqid, struct msg buf)
 {
   char string[LINE_LEN];
-  char *tmp, *contenido[COLUMNAS];
+  char *tmp, *contenido[COLUMNAS], msg[STR_LEN] = "";
   int i;
 
   FILE *archivo = fopen(DB_PATH, "r");
@@ -258,14 +251,12 @@ void print_database(int msqid, struct msg buf)
   if(archivo == NULL)
     perror("Archivo DB");
 
-  strcpy(buf.msg, "============================================================\n");
-  msgsnd(msqid, &buf, sizeof(buf.msg), 0);
+  strcat(msg, "============================================================\n");
 
   sprintf(buf.msg, "%-15s %-15s %-15s\n", "Usuario", "Estado", "Último login");
-  msgsnd(msqid, &buf, sizeof(buf.msg), 0);
+  strcat(msg, buf.msg);
 
-  strcpy(buf.msg, "============================================================\n");
-  msgsnd(msqid, &buf, sizeof(buf.msg), 0);
+  strcat(msg, "============================================================\n");
 
   while(fgets(string, LINE_LEN, archivo) != NULL)
   {
@@ -285,9 +276,14 @@ void print_database(int msqid, struct msg buf)
     }
 
     sprintf(buf.msg, "%-15s %-15s %-15s\n", contenido[1], contenido[3], contenido[4]);
-    msgsnd(msqid, &buf, sizeof(buf.msg), 0);
+    strcat(msg, buf.msg);
   }
   fclose(archivo);
+  strcpy(buf.msg, msg);
+  msgsnd(msqid, &buf, sizeof(buf.msg), 0);
+
+  memset(msg, '\0', STR_LEN-1);
+  memset(buf.msg, '\0', sizeof(buf.msg));
 }
 
 /**
@@ -401,26 +397,4 @@ void get_date(char date[20])
 
   sprintf(date,"%02d/%02d/%d %02d:%02d:%02d\n", dd, mm, yyyy, h, min, seg);
   date[strlen(date)-1] = '\0';
-}
-
-/**
- * @brief
- * Obtiene la cantidad de usuarios registrados en la base de datos.
- * @return Cantidad de usuerios registrados.
- */
-int get_lines()
-{
-  int lineas = 0;
-  char string[LINE_LEN];
-
-  FILE *archivo = fopen(DB_PATH, "r");
-
-  if(archivo == NULL)
-    perror("Archivo DB");
-
-  while(fgets(string, LINE_LEN, archivo) != NULL) lineas++;
-
-  fclose(archivo);
-
-  return lineas;
 }
