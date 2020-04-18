@@ -12,7 +12,9 @@ FI = fileserv
 
 # Compilador con sus flags
 CC 		 = gcc
-CFLAGS = -std=gnu11 -Werror -Wall -pedantic -Wextra -Wconversion -I$(IDIR) -O1
+WARN	 = -Werror -Wall -Wextra -Wconversion
+MD5 	 = -lssl -lcrypto
+CFLAGS = -std=gnu11 -pedantic $(WARN) -I$(IDIR) -O1
 
 all: client server
 
@@ -23,7 +25,7 @@ client:
 server:
 	$(CC) $(CFLAGS) $(SDIR)/sockets.c $(SDIR)/primary_server.c -o $(ODIR)/$(SV)
 	$(CC) $(CFLAGS) $(SDIR)/sockets.c $(SDIR)/auth_service.c -o $(ODIR)/$(AU)
-	$(CC) $(CFLAGS) $(SDIR)/sockets.c $(SDIR)/files_service.c -o $(ODIR)/$(FI)
+	$(CC) $(CFLAGS) $(SDIR)/sockets.c $(SDIR)/files_service.c -o $(ODIR)/$(FI) $(MD5)
 
 doc:
 	mkdir $(DDIR)

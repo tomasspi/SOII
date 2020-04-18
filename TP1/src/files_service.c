@@ -17,6 +17,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <dirent.h>
+#include <openssl/md5.h>
 
 #include "messages.h"
 #include "sockets.h"
@@ -87,12 +88,12 @@ void print_images(int msqid, struct msg buf)
   if(dir == NULL)
     perror("print imgs directory");
 
-  strcat(msg, "============================================================\n");
+  strcat(msg, "=====================================================================================\n");
 
   sprintf(buf.msg, "%-35s %-15s %-15s\n", "Imagen", "Tamaño [MB]", "MD5");
   strcat(msg, buf.msg);
 
-  strcat(msg, "============================================================\n");
+  strcat(msg, "=====================================================================================\n");
 
   while ((direct = readdir(dir)) != NULL)
   {
@@ -109,12 +110,31 @@ void print_images(int msqid, struct msg buf)
       file = fopen(path, "r");
       if(file == NULL) perror("file");
 
+      //------ Tamaño del archivo ------
       fseek(file, 0, SEEK_END);
       size = ftell(file);
       size /= 1000000;
+
+      //------ MD5 del archivo ------
+      unsigned char c[MD5_DIGEST_LENGTH];
+      MD5_CTX mdContext;
+      size_t bytes;
+      unsigned char data[1024];
+      MD5_Init(&mdContext);
+
+      while ((bytes = fread(data, 1, 1024, file)) != 0)
+          MD5_Update(&mdContext, data, bytes);
+
+      MD5_Final(c,&mdContext);
+
+      //------ MD% to string ------
+      char md5[33];
+      for(int i = 0; i < MD5_DIGEST_LENGTH; i++)
+        sprintf(&md5[i*2], "%02x",(unsigned int) c[i]);
+
       fclose(file);
 
-      sprintf(buf.msg, "%-35s %-14ld %-15s\n", direct->d_name, size, "MD5");
+      sprintf(buf.msg, "%-35s %-14ld %-15s\n", direct->d_name, size, md5);
       strcat(msg, buf.msg);
     }
   }

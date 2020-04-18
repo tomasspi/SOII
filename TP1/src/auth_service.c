@@ -251,12 +251,12 @@ void print_database(int msqid, struct msg buf)
   if(archivo == NULL)
     perror("Archivo DB");
 
-  strcat(msg, "============================================================\n");
+  strcat(msg, "=====================================================\n");
 
   sprintf(buf.msg, "%-15s %-15s %-15s\n", "Usuario", "Estado", "Último login");
   strcat(msg, buf.msg);
 
-  strcat(msg, "============================================================\n");
+  strcat(msg, "=====================================================\n");
 
   while(fgets(string, LINE_LEN, archivo) != NULL)
   {

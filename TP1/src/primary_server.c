@@ -186,7 +186,7 @@ listen:
             if(!strcmp(comando[1],"ls"))
             {
               print_ls(comando[1], msg_buf, newfd, msqid, buf);
-            };
+            }
 
           } else cmd_invalid(newfd, msg_buf);
         }
