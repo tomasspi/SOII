@@ -6,8 +6,12 @@
 
 #include <stdint.h>
 
-#define PORT_PS 4444  /**< Puerto para 'primary_server'. */
-#define PORT_FI 5555  /**< Puerto para 'files_service'. */
+enum ports        /**< Puertos para la conexión de los sockets. */
+{
+  port_ps = 4444, /**< Puerto para 'primary_server'. */
+  port_fi = 5555  /**< Puerto para 'files_service'. */
+};
+
 #define STR_LEN 1024  /**< Largo de los strings */
 
 #define SV_IP "127.0.0.1" /**< Dirección IP del servidor. */

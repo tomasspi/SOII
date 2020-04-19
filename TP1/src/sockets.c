@@ -63,13 +63,14 @@ int create_svsocket(uint16_t port)
   int sockfd;
   struct sockaddr_in sv_addr;
 
+socket_sv:
   sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
   if(sockfd == -1)
-  {
-    perror("create");
-    exit(EXIT_FAILURE);
-  }
+    {
+      perror("create");
+      goto socket_sv;
+    }
 
   setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int));
 
@@ -79,11 +80,16 @@ int create_svsocket(uint16_t port)
   sv_addr.sin_addr.s_addr = inet_addr(SV_IP);
   sv_addr.sin_port = htons(port);
 
-  if(bind(sockfd, (struct sockaddr *) &sv_addr, sizeof(sv_addr)) == -1)
-  {
-    perror("bind");
-    exit(EXIT_FAILURE);
-  }
+  int b;
+
+bind:
+  b = bind(sockfd, (struct sockaddr *) &sv_addr, sizeof(sv_addr));
+
+  if(b == -1)
+    {
+      perror("bind");
+      goto bind;
+    }
   return sockfd;
 }
 
@@ -98,12 +104,14 @@ int create_clsocket(uint16_t port)
   int sockfd;
   struct sockaddr_in sv_addr;
 
+socket_cl:
   sockfd = socket( AF_INET, SOCK_STREAM, 0 );
-  if ( sockfd == -1 )
-  {
-    perror("create");
-    exit(EXIT_FAILURE);
-  }
+
+  if (sockfd == -1)
+    {
+      perror("create");
+      goto socket_cl;
+    }
 
   memset((char *) &sv_addr, '0', sizeof(sv_addr));
 
@@ -111,10 +119,14 @@ int create_clsocket(uint16_t port)
   sv_addr.sin_addr.s_addr = inet_addr(SV_IP);
   sv_addr.sin_port = htons(port);
 
-  if(connect(sockfd, (struct sockaddr *)&sv_addr, sizeof(sv_addr)) == -1)
+  int c;
+  
+connect:
+  c = connect(sockfd, (struct sockaddr *)&sv_addr, sizeof(sv_addr));
+  if(c == -1)
   {
     perror("connect");
-    exit(EXIT_FAILURE);
+    goto connect;
   }
 
   return sockfd;

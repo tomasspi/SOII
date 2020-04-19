@@ -32,7 +32,7 @@ void send_client(ssize_t rw, int newfd, struct msg *buf);
 
 int main(void)
 {
-  int sockfd = create_svsocket(PORT_PS);
+  int sockfd = create_svsocket(port_ps);
   int newfd;
 
   ssize_t rw;
@@ -43,21 +43,21 @@ int main(void)
   key_t key;
 
   if ((key = ftok(QU_PATH, 5)) == -1)
-  {
-    perror("ftok");
-    exit(EXIT_FAILURE);
-  }
+    {
+      perror("ftok");
+      exit(EXIT_FAILURE);
+    }
 
   if ((msqid = msgget(key, 0666 | IPC_CREAT)) == -1)
-  {
-    perror("msgget");
-    exit(EXIT_FAILURE);
-  }
+    {
+      perror("msgget");
+      exit(EXIT_FAILURE);
+    }
 
   struct sockaddr_in cl_addr;
   uint cl_len;
 
-  printf("Esuchando en puerto %d...\n", PORT_PS);
+  printf("Esuchando en puerto %d...\n", port_ps);
 
   listen(sockfd, 1);
   cl_len = sizeof(cl_addr);
@@ -65,135 +65,153 @@ int main(void)
   newfd = accept(sockfd, (struct sockaddr *) &cl_addr, &cl_len);
 
   if(newfd == -1)
-  {
-    perror("accept");
-    exit(EXIT_FAILURE);
-  }
+    {
+      perror("accept");
+      exit(EXIT_FAILURE);
+    }
 
   printf("Conexión aceptada.\n");
 
   close(sockfd);
 
-  //int loginf = 1;
-
   int auth_id, files_id, auth_state, files_state;
 
-  if((auth_id = fork()) == -1) //------ Auth de hijo
-  {
-    perror("fork auth");
-    exit(EXIT_FAILURE);
-  }
+  if((auth_id = fork()) == -1) //------ Auth de hijo ------
+    {
+      perror("fork auth");
+      exit(EXIT_FAILURE);
+    }
 
   char *arga[] = {"./auth", NULL};
   char *argf[] = {"./fileserv", NULL};
 
-  if(auth_id == 0) execv(arga[0], arga);
+  if(auth_id == 0)
+    execv(arga[0], arga);
   else
-  {
-    if((files_id =  fork()) == -1) //------ Fileserv de hijo
     {
-      perror("fork files");
-      exit(EXIT_FAILURE);
-    }
-
-    if(files_id == 0) execv(argf[0], argf);
-    else
-    {
-      waitpid(auth_id, &auth_state, WNOHANG);
-      waitpid(files_id, &files_state, WNOHANG);
-
-listen:
-      while(1)
-      {
-        //------ Lectura ------
-        rw = recv_cmd(newfd,msg_buf);
-
-        if(rw == -1)
+      if((files_id =  fork()) == -1) //------ Fileserv de hijo ------
         {
-          perror("read");
-          goto listen;
-        }
-        //------ Fin Lectura ------
-
-        if(!strcmp(msg_buf,"exit"))
-        {
-          close(newfd);
-          buf.mtype = TO_AUTH;
-          strcpy(buf.msg, "exit");
-
-          msgsnd(msqid, &buf, sizeof(buf.msg), IPC_NOWAIT);
-
-          buf.mtype = TO_FILE;
-          msgsnd(msqid, &buf, sizeof(buf.msg), IPC_NOWAIT);
-
-          if (msgctl(msqid, IPC_RMID, NULL) == -1) /* Destruye la cola */
-          {
-            perror("msgctl");
-            exit(EXIT_FAILURE);
-          }
-          exit(EXIT_SUCCESS);
+          perror("fork files");
+          exit(EXIT_FAILURE);
         }
 
-        //------ Identificación y envío de mensaje ------
-        if(strchr(msg_buf,',') != NULL) //------ Inicio de sesión ------
+      if(files_id == 0)
+        execv(argf[0], argf);
+      else
         {
-          buf.mtype = TO_AUTH;
-          strcpy(buf.msg, msg_buf);
+          waitpid(auth_id, &auth_state, WNOHANG);
+          waitpid(files_id, &files_state, WNOHANG);
 
-          msgsnd(msqid, &buf, sizeof(buf.msg), 0);
-
-          msgrcv(msqid, &buf, sizeof(buf.msg), TO_PRIM, 0);
-          send_client(rw, newfd, &buf);
-        } else //------ Es un comando ------
-        {
-          int i = 0;
-          char *comando[5], backup[STR_LEN];
-          strcpy(backup, msg_buf);
-
-          char *tmp = strtok(backup, " ");
-          while(tmp != NULL)
-          {
-            comando[i] = tmp;
-            i++;
-            tmp = strtok(NULL," ");
-          }
-
-          if(comando[1] == NULL)
-          {
-            cmd_invalid(newfd, msg_buf);
-            goto listen;
-          }
-
-          if(!strcmp(comando[0], "user"))
-          {
-            buf.mtype = TO_AUTH;
-            if(!strcmp(comando[1],"ls"))
-              print_ls(comando[1], msg_buf, newfd, msqid, buf);
-
-            else if(!strcmp(comando[1],"passwd"))
+    listen:
+          while(1)
             {
-              strcpy(buf.msg, comando[2]);
+              //------ Lectura ------
+              rw = recv_cmd(newfd,msg_buf);
 
-              msgsnd(msqid, &buf, sizeof(buf.msg), 0);
+              if(rw == -1)
+                {
+                  perror("read");
+                  goto listen;
+                }
+              //------ Fin Lectura ------
 
-              msgrcv(msqid, &buf, sizeof(buf.msg), TO_PRIM, 0);
-              send_client(rw, newfd, &buf);
-            } else cmd_invalid(newfd, msg_buf);
-          }
-          else if(!strcmp(comando[0], "file"))
-          {
-            buf.mtype = TO_FILE;
-            if(!strcmp(comando[1],"ls"))
-            {
-              print_ls(comando[1], msg_buf, newfd, msqid, buf);
+              if(!strcmp(msg_buf,"exit"))
+                {
+                  close(newfd);
+                  buf.mtype = to_auth;
+                  strcpy(buf.msg, "exit");
+
+                  msgsnd(msqid, &buf, sizeof(buf.msg), IPC_NOWAIT);
+
+                  buf.mtype = to_file;
+                  msgsnd(msqid, &buf, sizeof(buf.msg), IPC_NOWAIT);
+
+                  if (msgctl(msqid, IPC_RMID, NULL) == -1) /* Destruye la cola */
+                    {
+                      perror("msgctl");
+                      exit(EXIT_FAILURE);
+                    }
+                  exit(EXIT_SUCCESS);
+                }
+
+              //------ Identificación y envío de mensaje ------
+              if(strchr(msg_buf,',') != NULL) //------ Inicio de sesión ------
+                {
+                  buf.mtype = to_auth;
+                  strcpy(buf.msg, msg_buf);
+
+                  msgsnd(msqid, &buf, sizeof(buf.msg), 0);
+
+                  msgrcv(msqid, &buf, sizeof(buf.msg), to_prim, 0);
+                  send_client(rw, newfd, &buf);
+                }
+              else //------ Es un comando ------
+                {
+                  int i = 0;
+                  char *comando[5], backup[STR_LEN];
+                  strcpy(backup, msg_buf);
+
+                  char *tmp = strtok(backup, " ");
+                  while(tmp != NULL)
+                    {
+                      comando[i] = tmp;
+                      i++;
+                      tmp = strtok(NULL," ");
+                    }
+
+                  if(comando[1] == NULL)
+                    {
+                      cmd_invalid(newfd, msg_buf);
+                      goto listen;
+                    }
+
+                  if(!strcmp(comando[0], "user"))
+                    {
+                      buf.mtype = to_auth;
+                      if(!strcmp(comando[1],"ls"))
+                        print_ls(comando[1], msg_buf, newfd, msqid, buf);
+
+                      else if(!strcmp(comando[1],"passwd"))
+                        {
+                          if(comando[2] == NULL)
+                            goto invalid;
+
+                          strcpy(buf.msg, comando[2]);
+
+                          msgsnd(msqid, &buf, sizeof(buf.msg), 0);
+
+                          msgrcv(msqid, &buf, sizeof(buf.msg), to_prim, 0);
+                          send_client(rw, newfd, &buf);
+                        }
+                      else goto invalid;
+                    }
+                  else if(!strcmp(comando[0], "file"))
+                    {
+                      buf.mtype = to_file;
+                      if(!strcmp(comando[1],"ls"))
+                        print_ls(comando[1], msg_buf, newfd, msqid, buf);
+
+                      else if(!strcmp(comando[1],"down"))
+                        {
+                          if(comando[2] == NULL)
+                            goto invalid;
+
+                          strcpy(buf.msg, comando[2]);
+
+                          msgsnd(msqid, &buf, sizeof(buf.msg), 0);
+
+                          msgrcv(msqid, &buf, sizeof(buf.msg), to_prim, 0);
+                          send_client(rw, newfd, &buf);
+                        }
+                      else goto invalid;
+                    }
+                  else
+invalid:           cmd_invalid(newfd, msg_buf);
+                }
+              //------ Fin de identificación y envío de mensaje ------
             }
-
-          } else cmd_invalid(newfd, msg_buf);
         }
-        //------ Fin de identificación y envío de mensaje ------
-      }
     }
-  }
 
   return EXIT_SUCCESS;
 }
@@ -247,7 +265,7 @@ void print_ls(char cmd[1], char buff[STR_LEN], int newfd, int msqid, struct msg 
   strcpy(buf.msg, cmd);
   msgsnd(msqid, &buf, sizeof(buf.msg), 0);
 
-  msgrcv(msqid, &buf, sizeof(buf.msg), TO_PRIM, 0);
+  msgrcv(msqid, &buf, sizeof(buf.msg), to_prim, 0);
 
   if(send_cmd(newfd, buf.msg) == -1) perror("write ls");
 }

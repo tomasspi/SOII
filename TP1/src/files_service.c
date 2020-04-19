@@ -15,9 +15,11 @@
 #include <unistd.h>
 #include <sys/msg.h>
 #include <sys/socket.h>
+#include <sys/sendfile.h>
 #include <netinet/in.h>
 #include <dirent.h>
 #include <openssl/md5.h>
+#include <fcntl.h>
 
 #include "messages.h"
 #include "sockets.h"
@@ -36,36 +38,116 @@ int main(void)
   key_t key;
 
   if ((key = ftok(QU_PATH, 5)) == -1)
-  {
-    perror("ftok");
-    exit(EXIT_FAILURE);
-  }
+    {
+      perror("ftok");
+      exit(EXIT_FAILURE);
+    }
 
   if ((msqid = msgget(key, 0666)) == -1)
-  {
-    perror("msgget");
-    exit(EXIT_FAILURE);
-  }
+    {
+      perror("msgget");
+      exit(EXIT_FAILURE);
+    }
 
-  buf.mtype = TO_PRIM;
+  buf.mtype = to_prim;
 
   while (1)
   {
-    msgrcv(msqid, &buf, sizeof(buf.msg), TO_FILE, 0);
+    msgrcv(msqid, &buf, sizeof(buf.msg), to_file, 0);
 
-    if(!strcmp(buf.msg, "exit")) exit(EXIT_SUCCESS);
+    if(!strcmp(buf.msg, "exit"))
+      exit(EXIT_SUCCESS);
 
     if(!strcmp(buf.msg,"ls"))
-    {
-      buf.mtype = TO_PRIM;
-      print_images(msqid, buf);
-    }
+      {
+        buf.mtype = to_prim;
+        print_images(msqid, buf);
+      }
     else
-    {
-      buf.mtype = TO_PRIM;
+      {
+        buf.mtype = to_prim;
+        char img[STR_LEN];
 
-      //if(!strcmp(buf.msg, database[1]))
-    }
+        strcpy(img, IMGS_PATH);
+        strcat(img, "/");
+        strcat(img, buf.msg);
+  //------ Crea el nuevo socket ------
+        int fifd;
+
+create:
+        fifd = create_svsocket(port_fi);
+        int newfd;
+
+        if(fifd == -1)
+          {
+            perror("Files socket");
+            goto create;
+          }
+
+        struct sockaddr_in cl_addr;
+        uint cl_len;
+
+        printf("FS: Esuchando en puerto %d...\n", port_fi);
+
+        listen(fifd, 1);
+        cl_len = sizeof(cl_addr);
+
+  accept:
+        newfd = accept(fifd, (struct sockaddr *) &cl_addr, &cl_len);
+
+        if(newfd == -1)
+          {
+            perror("accept");
+            goto accept;
+          }
+
+        printf("FS: Conexión aceptada.\n");
+
+        close(fifd);
+  //------ Fin creación socket y conexión ------
+        FILE *imgn;
+        long size;
+        off_t offset = 0;
+
+        imgn = fopen(img, "r");
+
+        if(imgn == NULL)
+          perror("file");
+
+        //------ Tamaño del archivo ------
+        fseek(imgn, 0, SEEK_END);
+        size = ftell(imgn);
+        fclose(imgn);
+
+        char size_s[STR_LEN] = "";
+        sprintf(size_s, "%ld",size);
+
+        strcpy(buf.msg, "Download ");
+        strcat(buf.msg, size_s);
+        msgsnd(msqid, &buf, sizeof(buf.msg), 0);
+
+        int32_t img_to_send;
+
+retry:
+        img_to_send = open(img, O_RDONLY);
+
+        if(img_to_send == -1)
+          {
+            perror("open2send");
+            goto retry;
+          }
+
+        if(sendfile(fifd, img_to_send, &offset,(size_t) size) == -1)
+          {
+            perror("sendfile");
+            goto retry;
+          }
+        else
+          {
+            close(img_to_send);
+            printf("%s\n", "Envío completado.");
+          }
+      }
   }
 
   return EXIT_SUCCESS;

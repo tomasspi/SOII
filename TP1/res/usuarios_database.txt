@@ -1,4 +1,4 @@
-1,tomas,santiago,activo,18/04/2020 19:43:07
+1,tomas,santiago,activo,19/04/2020 14:49:13
 2,cristobal,arcos,bloqueado,fecha
 3,marcela,valeria,bloqueado,fecha
 4,pablo,ricardo,activo,fecha

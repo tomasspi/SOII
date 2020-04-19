@@ -21,7 +21,7 @@
 #define COLUMNAS  5            /**< Cantidad de columnas de la BD. */
 #define BLOCKED_Q "bloqueado"  /**< ¿El usuario está bloqueado? */
 #define DB_PATH   "../res/usuarios_database.txt" /**< Path a la BD.*/
-#define TMP_PATH  "../res/DB.tmp"
+#define TMP_PATH  "../res/DB.tmp" /**< Path a la BD temporal. */
 #define FECHA     'F'          /**< Utilizada para cambiar fecha en BD. */
 #define PASSWD    'P'          /**< Utilizado para cambiar password en BD. */
 #define STATUS    'S'          /**< Utilizado para cambiar el estado en BD. */
@@ -49,92 +49,99 @@ int main(void)
   key_t key;
 
   if ((key = ftok(QU_PATH, 5)) == -1)
-  {
-    perror("ftok");
-    exit(EXIT_FAILURE);
-  }
+    {
+      perror("ftok");
+      exit(EXIT_FAILURE);
+    }
 
   if ((msqid = msgget(key, 0666)) == -1)
-  {
-    perror("msgget");
-    exit(EXIT_FAILURE);
-  }
+    {
+      perror("msgget");
+      exit(EXIT_FAILURE);
+    }
 
   int tries = 3;
   int auth = 0;
 
   do
-  {
-    msgrcv(msqid, &buf, sizeof(buf.msg), TO_AUTH, 0);
-
-    login(buf.msg, input);
-
-    if(check_database(input, database))
     {
-      switch(check_credentials(input, database))
-      {
-        case BLOCKED:
-          strcpy(buf.msg, "El usuario está bloqueado.\n");
-          break;
+      msgrcv(msqid, &buf, sizeof(buf.msg), to_auth, 0);
 
-        case ACTIVE:
-          strcpy(buf.msg, database[COLUMNAS-1]);
-          get_date(date);
-          if(write_database(database, FECHA, date) != 1)
-            perror("write_database");
-          auth = 1;
-          break;
+      login(buf.msg, input);
 
-        case INVALID:
-          strcpy(buf.msg, "Credenciales inválidas.\n");
-          tries--;
-          if(tries == 0)
-          {
-            strcpy(buf.msg, "El usuario ha sido bloqueado.\n");
-            if(write_database(database, STATUS, BLOCKED_Q) != 1)
-              perror("write_database");
-          }
-          break;
-      }
-    } else strcpy(buf.msg,"El usuario no existe.\n");
+      if(check_database(input, database))
+        {
+          switch(check_credentials(input, database))
+            {
+              case blocked:
+                strcpy(buf.msg, "El usuario está bloqueado.\n");
+                break;
 
-    buf.mtype = TO_PRIM;
-    msgsnd(msqid, &buf, sizeof(buf.msg), 0);
-  } while(tries && !auth);
+              case active:
+                strcpy(buf.msg, database[COLUMNAS-1]);
+                get_date(date);
+
+                if(write_database(database, FECHA, date) != 1)
+                  perror("write_database");
+
+                auth = 1;
+                break;
+
+              case invalid:
+                strcpy(buf.msg, "Credenciales inválidas.\n");
+                tries--;
+
+                if(tries == 0)
+                  {
+                    strcpy(buf.msg, "El usuario ha sido bloqueado.\n");
+                    if(write_database(database, STATUS, BLOCKED_Q) != 1)
+                      perror("write_database");
+                  }
+                break;
+            }
+        } else strcpy(buf.msg,"El usuario no existe.\n");
+
+      buf.mtype = to_prim;
+      msgsnd(msqid, &buf, sizeof(buf.msg), 0);
+    }
+  while(tries && !auth);
 
   while(auth)
-  {
-    msgrcv(msqid, &buf, sizeof(buf.msg), TO_AUTH, 0);
-
-    if(!strcmp(buf.msg, "exit")) exit(EXIT_SUCCESS);
-
-    if(!strcmp(buf.msg,"ls"))
     {
-      buf.mtype = TO_PRIM;
-      print_database(msqid, buf);
-    }
-    else
-    {
-      buf.mtype = TO_PRIM;
+      msgrcv(msqid, &buf, sizeof(buf.msg), to_auth, 0);
 
-      if(!strcmp(buf.msg, database[1]))
-      {
-        strcpy(buf.msg, "User and password can't be the same.\n");
-        msgsnd(msqid, &buf, sizeof(buf.msg), 0);
-      } else
-      {
-        if(write_database(database, PASSWD, buf.msg) != 1)
-          perror("write_database");
-        else
+      if(!strcmp(buf.msg, "exit"))
+        exit(EXIT_SUCCESS);
+
+      if(!strcmp(buf.msg,"ls"))
         {
-          strcpy(database[COLUMNAS-3],buf.msg);
-
-          strcpy(buf.msg, "Password changed successfully.\n");
-          msgsnd(msqid, &buf, sizeof(buf.msg), 0);
+          buf.mtype = to_prim;
+          print_database(msqid, buf);
         }
-      }
+      else
+        {
+          buf.mtype = to_prim;
+
+          if(!strcmp(buf.msg, database[1]))
+            {
+              strcpy(buf.msg, "User and password can't be the same.\n");
+              msgsnd(msqid, &buf, sizeof(buf.msg), 0);
+            }
+          else
+            {
+              if(write_database(database, PASSWD, buf.msg) != 1)
+                perror("write_database");
+
+              else
+                {
+                  strcpy(database[COLUMNAS-3],buf.msg);
+
+                  strcpy(buf.msg, "Password changed successfully.\n");
+                  msgsnd(msqid, &buf, sizeof(buf.msg), 0);
+                }
+            }
+        }
     }
-  }
 
   return EXIT_SUCCESS;
 }
@@ -181,33 +188,33 @@ bool check_database(char input[2][STR_LEN], char database[COLUMNAS][STR_LEN])
 
 
   while(fgets(string, LINE_LEN, archivo) != NULL)
-  {
-    //reemplazo el salto de lina con fin de linea
-    if(strlen(string) > 0 && string[strlen(string)-1] == '\n')
-      string[strlen(string)-1] = '\0';
-
-    i = 0;
-    tmp = strtok(string,",");
-
-    //Leo archivo
-    while(tmp != NULL)
     {
-      contenido[i] = tmp;
-      i++;
-      tmp = strtok(NULL,",");
-    }
+      //reemplazo el salto de lina con fin de linea
+      if(strlen(string) > 0 && string[strlen(string)-1] == '\n')
+        string[strlen(string)-1] = '\0';
 
-    //encontre usuario?
-    if(!strcmp(input[0],contenido[1]))
-    {
-      fclose(archivo);
-      //Copio a database
-      for(int j = 0; j < COLUMNAS; j++)
-        strcpy(database[j],contenido[j]);
+      i = 0;
+      tmp = strtok(string,",");
 
-      return true;
+      //Leo archivo
+      while(tmp != NULL)
+        {
+          contenido[i] = tmp;
+          i++;
+          tmp = strtok(NULL,",");
+        }
+
+      //encontre usuario?
+      if(!strcmp(input[0],contenido[1]))
+        {
+          fclose(archivo);
+          //Copio a database
+          for(int j = 0; j < COLUMNAS; j++)
+            strcpy(database[j],contenido[j]);
+
+          return true;
+        }
     }
-  }
   fclose(archivo);
   return false;
 }
@@ -225,12 +232,13 @@ bool check_database(char input[2][STR_LEN], char database[COLUMNAS][STR_LEN])
  */
 int check_credentials(char credentials[2][STR_LEN], char data[COLUMNAS][STR_LEN])
 {
-
   if(!strcmp(credentials[1],data[2]))
-  {
-    if(!strcmp(data[COLUMNAS-2],BLOCKED_Q)) return BLOCKED;
-    else return ACTIVE;
-  } else return INVALID;
+    {
+      if(!strcmp(data[COLUMNAS-2],BLOCKED_Q))
+        return blocked;
+      else return active;
+    }
+  else return invalid;
 }
 
 /**
@@ -259,25 +267,28 @@ void print_database(int msqid, struct msg buf)
   strcat(msg, "=====================================================\n");
 
   while(fgets(string, LINE_LEN, archivo) != NULL)
-  {
-    //reemplazo el salto de lina con fin de linea
-    if(strlen(string) > 0 && string[strlen(string)-1] == '\n')
-      string[strlen(string)-1] = '\0';
-
-    i = 0;
-    tmp = strtok(string,",");
-
-    //Leo archivo
-    while(tmp != NULL)
     {
-      contenido[i] = tmp;
-      i++;
-      tmp = strtok(NULL,",");
+      //reemplazo el salto de lina con fin de linea
+      if(strlen(string) > 0 && string[strlen(string)-1] == '\n')
+        string[strlen(string)-1] = '\0';
+
+      i = 0;
+      tmp = strtok(string,",");
+
+      //Leo archivo
+      while(tmp != NULL)
+      {
+        contenido[i] = tmp;
+        i++;
+        tmp = strtok(NULL,",");
+      }
+
+      sprintf(buf.msg, "%-15s %-15s %-15s\n",
+              contenido[1], contenido[3], contenido[4]);
+
+      strcat(msg, buf.msg);
     }
 
-    sprintf(buf.msg, "%-15s %-15s %-15s\n", contenido[1], contenido[3], contenido[4]);
-    strcat(msg, buf.msg);
-  }
   fclose(archivo);
   strcpy(buf.msg, msg);
   msgsnd(msqid, &buf, sizeof(buf.msg), 0);
@@ -306,29 +317,31 @@ int write_database(char data[COLUMNAS][STR_LEN], const char t, const char *new)
     perror("write_database");
 
   while(fgets(string, LINE_LEN, archivo) != NULL)
-  {
-    //Busco usuario por ID.
-    if(!strncmp(string,data[0],1))
     {
-      switch (t)
-      {
-        case FECHA:
-          replace(string, data[COLUMNAS-1], new);
-          fputs(string, reemplazo);
-          break;
+      //Busco usuario por ID.
+      if(!strncmp(string,data[0],1))
+        {
+          switch (t)
+            {
+              case FECHA:
+                replace(string, data[COLUMNAS-1], new);
+                fputs(string, reemplazo);
+                break;
 
-        case STATUS:
-          replace(string, data[COLUMNAS-2], new);
-          fputs(string, reemplazo);
-          break;
+              case STATUS:
+                replace(string, data[COLUMNAS-2], new);
+                fputs(string, reemplazo);
+                break;
 
-        case PASSWD:
-          replace(string, data[COLUMNAS-3], new);
-          fputs(string, reemplazo);
-          break;
-      }
-    } else fputs(string, reemplazo);
-  }
+              case PASSWD:
+                replace(string, data[COLUMNAS-3], new);
+                fputs(string, reemplazo);
+                break;
+            }
+        }
+      else fputs(string, reemplazo);
+    }
+
   fclose(archivo);
   fclose(reemplazo);
 
@@ -354,17 +367,17 @@ void replace(char *str, const char *old, const char *new)
   len = strlen(old);
 
   while((pos = strstr(str,old)) != NULL)
-  {
-    strcpy(temp,str); //backup de la línea
+    {
+      strcpy(temp,str); //backup de la línea
 
-    indice = pos - str; //posicion en la que se encontró la palabra
+      indice = pos - str; //posicion en la que se encontró la palabra
 
-    str[indice] = '\0'; //termina la línea en esa posición
+      str[indice] = '\0'; //termina la línea en esa posición
 
-    strcat(str,new); //concatena con el contendio nuevo
+      strcat(str,new); //concatena con el contendio nuevo
 
-    strcat(str, temp+indice+len); //concatena con el resto
-  }
+      strcat(str, temp+indice+len); //concatena con el resto
+    }
 }
 
 /**

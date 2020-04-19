@@ -6,14 +6,28 @@
 
 #define STR_LEN 1024 /**< Largo de los strings */
 
-#define TO_AUTH 1    /**< Destinado a 'auth_service' */
-#define TO_FILE 2    /**< Destinado a 'files_service' */
-#define TO_PRIM 3    /**< Destinado a 'primary_server' */
+/**
+ * @brief
+ * Enum con con los destinos de los mensajes a enviar en la cola de mensajes.
+ */
+enum msg_ID
+{
+  to_auth = 1, /**< Destinado a 'auth_service'. */
+  to_file = 2, /**< Destinado a 'files_service'. */
+  to_prim = 3  /**< Destinado a 'primary_server'. */
+};
 
-#define BLOCKED 1    /**< El usuario está bloqueado. */
-#define ACTIVE  2    /**< El usuario está activo. */
-#define INVALID 3    /**< Credenciales inválidas. */
-#define NOT_REG 4    /**< Es usuario no existe. */
+/**
+ * @brief
+ * Enum con los estados posibles del usuario.
+ */
+enum status
+{
+  blocked = 1, /**< El usuario está bloqueado. */
+  active  = 2, /**< El usuario está activo. */
+  invalid = 3, /**< Credenciales inválidas. */
+  not_reg = 4  /**< Es usuario no existe. */
+};
 
 #define QU_PATH  "./server" /**< Archivo para crear la cola de mensajes. */
 

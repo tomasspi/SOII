@@ -39,42 +39,44 @@ int main(void)
   ctrlc.sa_flags = 0;
 
   if(sigaction(SIGINT, &ctrlc, NULL) == -1)
-  {
-    perror("signal");
-    exit(EXIT_FAILURE);
-  }
+    {
+      perror("signal");
+      exit(EXIT_FAILURE);
+    }
 
   int32_t tries = 3;
 
   char buffer[STR_LEN];
 
-	sockfd = create_clsocket(PORT_PS);
+	sockfd = create_clsocket(port_ps);
   ssize_t rw;
 
   do
-  {
-    ask_login(buffer);
-
-    rw = send_cmd(sockfd,buffer);
-
-    if(rw == -1)
     {
-      perror("write");
-      exit(EXIT_FAILURE);
+      ask_login(buffer);
+
+send: rw = send_cmd(sockfd,buffer);
+
+      if(rw == -1)
+        {
+          perror("write");
+          goto send;
+        }
+
+      rw = recv_cmd(sockfd, buffer);
+
+      if(strchr(buffer,'/') != NULL)
+        {
+          printf("\nLast login: %s\n", buffer);
+          show_prompt(sockfd, rw, buffer);
+        }
+      else
+        {
+          printf("%s\n", buffer);
+          tries--;
+        }
     }
-
-    rw = recv_cmd(sockfd, buffer);
-
-    if(strchr(buffer,'/') != NULL)
-    {
-      printf("\nLast login: %s\n", buffer);
-      show_prompt(sockfd, rw, buffer);
-    } else
-    {
-      printf("%s\n", buffer);
-      tries--;
-    }
-  } while(tries > 0);
+  while(tries > 0);
 
   return EXIT_SUCCESS;
 }
@@ -89,7 +91,14 @@ int main(void)
 void ask_login(char buf[STR_LEN])
 {
   printf("Ingrese usuario: ");
-  if(fgets(buf, STR_LEN, stdin) == NULL) perror("fgets login");
+
+get:
+  if(fgets(buf, STR_LEN, stdin) == NULL)
+    {
+      perror("fgets login");
+      goto get;
+    }
+
   buf[strlen(buf)-1] = ',';
 
   printf("Ingrese contraseña: ");
@@ -107,10 +116,11 @@ void ask_login(char buf[STR_LEN])
   size_t i = strlen(buf);
 
   while(read(STDIN_FILENO, &c, 1) == 1 && c != '\n')
-  {
-    buf[i] = c;
-    i++;
-  }
+    {
+      buf[i] = c;
+      i++;
+    }
+
   buf[i] = '\0';
   printf("\n");
 
@@ -130,33 +140,53 @@ void show_prompt(int32_t sockfd, ssize_t rw, char buffer[STR_LEN])
   prompt:
 
   while(1)
-  {
-		printf("#> ");
-		memset(buffer, '\0', STR_LEN);
-		if(fgets(buffer, STR_LEN-1, stdin) == NULL) perror("fgets prompt");
-    buffer[strlen(buffer)-1] = '\0';
-
-    if(buffer[0] == '\0') goto prompt;
-
-		rw = send_cmd(sockfd, buffer);
-
-    if(rw == -1)
     {
-      perror("write");
-      goto prompt;
-    }
+  		printf("#> ");
+  		memset(buffer, '\0', STR_LEN);
+  		if(fgets(buffer, STR_LEN-1, stdin) == NULL) perror("fgets prompt");
+      buffer[strlen(buffer)-1] = '\0';
 
-    if(!strcmp(buffer, "exit")) exit(EXIT_SUCCESS);
+      if(buffer[0] == '\0')
+        goto prompt;
 
-read:
-    rw = recv_cmd(sockfd, buffer);
+  		rw = send_cmd(sockfd, buffer);
 
-    printf("%s\n", buffer);
+      if(rw == -1)
+        {
+          perror("write");
+          goto prompt;
+        }
 
-    if(rw == -1)
-    {
-      perror("read");
-      goto read;
-    }
-	}
+      if(!strcmp(buffer, "exit"))
+        exit(EXIT_SUCCESS);
+
+  read:
+      rw = recv_cmd(sockfd, buffer);
+
+      // if(!strstr(buffer,"Download"))
+      //   {
+      //     char *tok = strtok(buffer, " ");
+      //     tok = strtok(NULL, " ");
+      //
+      //     size_t size = 0;
+      //     sprintf(size, "%ud", tok);
+      //
+      //     int32_t fifd = create_clsocket(port_fi);
+      //
+      //     FILE *usb;
+      //     char path_usb[STR_LEN];
+      //
+      //     while()
+      //     fwrite(fifd, 1, size, usb);
+      //
+      //   }
+
+      printf("%s\n", buffer);
+
+      if(rw == -1)
+        {
+          perror("read");
+          goto read;
+        }
+  	}
 }
