@@ -163,23 +163,41 @@ void show_prompt(int32_t sockfd, ssize_t rw, char buffer[STR_LEN])
   read:
       rw = recv_cmd(sockfd, buffer);
 
-      // if(!strstr(buffer,"Download"))
-      //   {
-      //     char *tok = strtok(buffer, " ");
-      //     tok = strtok(NULL, " ");
-      //
-      //     size_t size = 0;
-      //     sprintf(size, "%ud", tok);
-      //
-      //     int32_t fifd = create_clsocket(port_fi);
-      //
-      //     FILE *usb;
-      //     char path_usb[STR_LEN];
-      //
-      //     while()
-      //     fwrite(fifd, 1, size, usb);
-      //
-      //   }
+      if(strstr(buffer,"Download") != NULL)
+        {
+          char *tok = strtok(buffer, " ");
+          tok = strtok(NULL, " ");
+
+          size_t size = 0;
+          sscanf(tok, "%lud", &size);
+
+          int32_t fifd = create_clsocket(port_fi);
+
+          printf("%s\n", "About to burn.");
+
+          FILE *usb;
+          char path_usb[STR_LEN];
+          tok = strtok(NULL, " ");
+          strcpy(path_usb,tok);
+
+          usb = fopen(path_usb, "wb");
+
+          if(usb == NULL)
+            perror("open usb");
+
+          FILE *file = fdopen(fifd, "r");
+
+          if(file == NULL)
+            perror("open fifd");
+
+          while((rw = recv(fifd, buffer, STR_LEN, 0)) > 0)
+            fwrite(buffer, sizeof(char), (size_t) rw, usb);
+
+          sync();
+          fclose(usb);
+
+          printf("%s\n", "DONE.");
+        }
 
       printf("%s\n", buffer);
 

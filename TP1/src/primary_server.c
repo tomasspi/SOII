@@ -22,24 +22,43 @@
 #include "messages.h"
 #include "sockets.h"
 
-#define USER 'u'  /**< El comando 'user'. */
-#define FILE 'f'  /**< El comando 'file'. */
 #define LS   "ls" /**< El comando 'ls'. */
 
+int newfd;
+struct msg buf;
+int msqid;
+
 void cmd_invalid(int newfd, char buf[STR_LEN]);
-void print_ls(char cmd[1], char buff[STR_LEN], int newfd, int msqid, struct msg buf);
+void print_ls(char cmd[1], char buff[STR_LEN], int newfd, int msqid,
+              struct msg buf);
 void send_client(ssize_t rw, int newfd, struct msg *buf);
+
+/**
+ * @brief
+ * En caso de que ocurra algún error, se envía a los procesos hijos un 'exit'
+ * para que finalicen su ejecución.
+ */
+void kill_childs(void)
+{
+  close(newfd);
+  buf.mtype = to_auth;
+  strcpy(buf.msg, "exit");
+
+  msgsnd(msqid, &buf, sizeof(buf.msg), IPC_NOWAIT);
+
+  buf.mtype = to_file;
+  msgsnd(msqid, &buf, sizeof(buf.msg), IPC_NOWAIT);
+}
 
 int main(void)
 {
+  atexit(kill_childs);
+
   int sockfd = create_svsocket(port_ps);
-  int newfd;
 
   ssize_t rw;
   char msg_buf[STR_LEN];
 
-  struct msg buf;
-  int msqid;
   key_t key;
 
   if ((key = ftok(QU_PATH, 5)) == -1)
@@ -168,7 +187,7 @@ int main(void)
                   if(!strcmp(comando[0], "user"))
                     {
                       buf.mtype = to_auth;
-                      if(!strcmp(comando[1],"ls"))
+                      if(!strcmp(comando[1],LS))
                         print_ls(comando[1], msg_buf, newfd, msqid, buf);
 
                       else if(!strcmp(comando[1],"passwd"))
@@ -188,15 +207,15 @@ int main(void)
                   else if(!strcmp(comando[0], "file"))
                     {
                       buf.mtype = to_file;
-                      if(!strcmp(comando[1],"ls"))
+                      if(!strcmp(comando[1],LS))
                         print_ls(comando[1], msg_buf, newfd, msqid, buf);
 
                       else if(!strcmp(comando[1],"down"))
                         {
-                          if(comando[2] == NULL)
+                          if(comando[2] == NULL || comando[3] == NULL)
                             goto invalid;
 
-                          strcpy(buf.msg, comando[2]);
+                          sprintf(buf.msg, "%s %s", comando[2], comando[3]);
 
                           msgsnd(msqid, &buf, sizeof(buf.msg), 0);
 
@@ -226,7 +245,6 @@ invalid:           cmd_invalid(newfd, msg_buf);
  */
 void send_client(ssize_t rw, int newfd, struct msg *buf)
 {
-  /**< Escritura */
   rw = send_cmd(newfd, buf->msg);
 
   if(rw == -1)
@@ -234,7 +252,6 @@ void send_client(ssize_t rw, int newfd, struct msg *buf)
     perror("write");
     exit(EXIT_FAILURE);
   }
-  /**< Escritura */
 }
 
 /**
@@ -245,7 +262,11 @@ void send_client(ssize_t rw, int newfd, struct msg *buf)
  */
 void cmd_invalid(int newfd, char buf[STR_LEN])
 {
-  strcpy(buf, "Comando inválido.\n");
+  sprintf(buf,"Comando inválido. "
+          "Los comandos soportados son:\n - %s\n - %s\n - %s\n - %s\n",
+          "user ls", "user passwd 'nueva_password'",
+          "file ls", "file down 'nombre_imagen' 'directorio_usb'");
+
   send_cmd(newfd, buf);
 }
 
@@ -267,5 +288,6 @@ void print_ls(char cmd[1], char buff[STR_LEN], int newfd, int msqid, struct msg 
 
   msgrcv(msqid, &buf, sizeof(buf.msg), to_prim, 0);
 
-  if(send_cmd(newfd, buf.msg) == -1) perror("write ls");
+  if(send_cmd(newfd, buf.msg) == -1)
+    perror("write ls");
 }

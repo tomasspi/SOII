@@ -16,6 +16,7 @@
 #include <sys/msg.h>
 #include <sys/socket.h>
 #include <sys/sendfile.h>
+#include <sys/stat.h>
 #include <netinet/in.h>
 #include <dirent.h>
 #include <openssl/md5.h>
@@ -68,46 +69,26 @@ int main(void)
         buf.mtype = to_prim;
         char img[STR_LEN];
 
+        char *tok = strtok(buf.msg, " ");
+
         strcpy(img, IMGS_PATH);
         strcat(img, "/");
-        strcat(img, buf.msg);
-  //------ Crea el nuevo socket ------
-        int fifd;
+        strcat(img, tok);
 
-create:
-        fifd = create_svsocket(port_fi);
+        tok = strtok(NULL, " ");
+
+  //------ Crea el nuevo socket ------
+        int fifd  = create_svsocket(port_fi);
         int newfd;
 
         if(fifd == -1)
           {
             perror("Files socket");
-            goto create;
+            exit(EXIT_FAILURE);
           }
-
-        struct sockaddr_in cl_addr;
-        uint cl_len;
-
-        printf("FS: Esuchando en puerto %d...\n", port_fi);
-
-        listen(fifd, 1);
-        cl_len = sizeof(cl_addr);
-
-  accept:
-        newfd = accept(fifd, (struct sockaddr *) &cl_addr, &cl_len);
-
-        if(newfd == -1)
-          {
-            perror("accept");
-            goto accept;
-          }
-
-        printf("FS: Conexión aceptada.\n");
-
-        close(fifd);
-  //------ Fin creación socket y conexión ------
+  //------ Fin creación socket ------
         FILE *imgn;
         long size;
-        off_t offset = 0;
 
         imgn = fopen(img, "r");
 
@@ -120,33 +101,58 @@ create:
         fclose(imgn);
 
         char size_s[STR_LEN] = "";
-        sprintf(size_s, "%ld",size);
+        sprintf(size_s, "%ld", size);
 
-        strcpy(buf.msg, "Download ");
-        strcat(buf.msg, size_s);
+        sprintf(buf.msg, "Download %s %s", size_s, tok);
         msgsnd(msqid, &buf, sizeof(buf.msg), 0);
 
-        int32_t img_to_send;
+  //------ Espera conexión de cliente ------
+        struct sockaddr_in cl_addr;
+        uint cl_len;
 
-retry:
-        img_to_send = open(img, O_RDONLY);
+        printf("  FS: Esuchando en puerto %d...\n", port_fi);
 
-        if(img_to_send == -1)
+        listen(fifd, 1);
+        cl_len = sizeof(cl_addr);
+
+        newfd = accept(fifd, (struct sockaddr *) &cl_addr, &cl_len);
+
+        if(newfd == -1)
           {
-            perror("open2send");
-            goto retry;
+            perror("accept");
+            exit(EXIT_FAILURE);
           }
 
-        if(sendfile(fifd, img_to_send, &offset,(size_t) size) == -1)
+        printf("  FS: Conexión aceptada.\n");
+  //------ Cliente conectado ------
+        int32_t imgfd;
+
+        imgfd = open(img, O_RDONLY);
+
+        if(imgfd == -1)
           {
-            perror("sendfile");
-            goto retry;
+            perror("open image");
+            exit(EXIT_FAILURE);
           }
-        else
-          {
-            close(img_to_send);
-            printf("%s\n", "Envío completado.");
-          }
+
+        printf("%s\n", "  FS: Sending file...");
+
+        size_t to_send = (size_t) size;
+        ssize_t sent;
+        off_t offset = 0;
+
+        while(((sent = sendfile(fifd, imgfd, &offset, STR_LEN)) > 0)
+              && (to_send > 0))
+        {
+          to_send -= (size_t) sent;
+        }
+
+        printf("%s\n", "DONE.");
+        fflush(stdout);
+
+
+        close(imgfd);
+        //close(fifd);
       }
   }
 
@@ -190,12 +196,13 @@ void print_images(int msqid, struct msg buf)
       strcat(path,direct->d_name);
 
       file = fopen(path, "r");
-      if(file == NULL) perror("file");
+      if(file == NULL)
+        perror("file");
 
       //------ Tamaño del archivo ------
       fseek(file, 0, SEEK_END);
       size = ftell(file);
-      size /= 1000000;
+      size /= 1048576;
 
       //------ MD5 del archivo ------
       unsigned char c[MD5_DIGEST_LENGTH];
@@ -209,7 +216,7 @@ void print_images(int msqid, struct msg buf)
 
       MD5_Final(c,&mdContext);
 
-      //------ MD% to string ------
+      //------ MD5 to string ------
       char md5[33];
       for(int i = 0; i < MD5_DIGEST_LENGTH; i++)
         sprintf(&md5[i*2], "%02x",(unsigned int) c[i]);
