@@ -170,6 +170,9 @@ int main(void)
                   char *comando[5], backup[STR_LEN];
                   strcpy(backup, msg_buf);
 
+                  for(int i = 0; i < 5; i++)
+                    comando[i] = "";
+
                   char *tmp = strtok(backup, " ");
                   while(tmp != NULL)
                     {
@@ -192,7 +195,7 @@ int main(void)
 
                       else if(!strcmp(comando[1],"passwd"))
                         {
-                          if(comando[2] == NULL)
+                          if(!strcmp(comando[2],""))
                             goto invalid;
 
                           strcpy(buf.msg, comando[2]);
@@ -212,7 +215,7 @@ int main(void)
 
                       else if(!strcmp(comando[1],"down"))
                         {
-                          if(comando[2] == NULL || comando[3] == NULL)
+                          if(!strcmp(comando[2],"") || !strcmp(comando[3],""))
                             goto invalid;
 
                           sprintf(buf.msg, "%s %s", comando[2], comando[3]);

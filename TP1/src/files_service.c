@@ -29,6 +29,7 @@
 
 void print_images(int msqid, struct msg buf);
 int get_images();
+void get_md5(FILE *file, char md5[33]);
 
 int main(void)
 {
@@ -76,6 +77,8 @@ int main(void)
         strcat(img, tok);
 
         tok = strtok(NULL, " ");
+        char usb[STR_LEN];
+        strcpy(usb,tok);
 
   //------ Crea el nuevo socket ------
         int fifd  = create_svsocket(port_fi);
@@ -103,7 +106,11 @@ int main(void)
         char size_s[STR_LEN] = "";
         sprintf(size_s, "%ld", size);
 
-        sprintf(buf.msg, "Download %s %s", size_s, tok);
+        char md5s[33];
+        get_md5(imgn, md5s);
+
+        sprintf(buf.msg, "Download %s %s %s", size_s, usb, md5s);
+
         msgsnd(msqid, &buf, sizeof(buf.msg), 0);
 
   //------ Espera conexión de cliente ------
@@ -124,6 +131,7 @@ int main(void)
           }
 
         printf("  FS: Conexión aceptada.\n");
+        close(fifd);
   //------ Cliente conectado ------
         int32_t imgfd;
 
@@ -141,18 +149,15 @@ int main(void)
         ssize_t sent;
         off_t offset = 0;
 
-        while(((sent = sendfile(fifd, imgfd, &offset, STR_LEN)) > 0)
+        while(((sent = sendfile(newfd, imgfd, &offset, to_send)) > 0)
               && (to_send > 0))
         {
           to_send -= (size_t) sent;
         }
 
-        printf("%s\n", "DONE.");
-        fflush(stdout);
-
+        printf("  FS: %lu %s\n", size, "sent.");
 
         close(imgfd);
-        //close(fifd);
       }
   }
 
@@ -202,24 +207,10 @@ void print_images(int msqid, struct msg buf)
       //------ Tamaño del archivo ------
       fseek(file, 0, SEEK_END);
       size = ftell(file);
-      size /= 1048576;
+      size /= 1000000;
 
-      //------ MD5 del archivo ------
-      unsigned char c[MD5_DIGEST_LENGTH];
-      MD5_CTX mdContext;
-      size_t bytes;
-      unsigned char data[1024];
-      MD5_Init(&mdContext);
-
-      while ((bytes = fread(data, 1, 1024, file)) != 0)
-          MD5_Update(&mdContext, data, bytes);
-
-      MD5_Final(c,&mdContext);
-
-      //------ MD5 to string ------
       char md5[33];
-      for(int i = 0; i < MD5_DIGEST_LENGTH; i++)
-        sprintf(&md5[i*2], "%02x",(unsigned int) c[i]);
+      get_md5(file, md5);
 
       fclose(file);
 
@@ -233,4 +224,29 @@ void print_images(int msqid, struct msg buf)
 
   memset(msg, '\0', STR_LEN-1);
   memset(buf.msg, '\0', sizeof(buf.msg));
+}
+
+/**
+ * @brief
+ * Función encargada de calcular el hash MD5 del archivo.
+ * @param file     Archivo al cual se desea calcular el hash MD5.
+ * @param md5[33]  String donde se guarda el hash MD5.
+ */
+void get_md5(FILE *file, char md5[33])
+{
+  //------ MD5 del archivo ------
+  unsigned char c[MD5_DIGEST_LENGTH];
+  MD5_CTX mdContext;
+  size_t bytes;
+  unsigned char data[1024];
+  MD5_Init(&mdContext);
+
+  while ((bytes = fread(data, 1, 1024, file)) != 0)
+    MD5_Update(&mdContext, data, bytes);
+
+  MD5_Final(c,&mdContext);
+
+  //------ MD5 to string ------
+  for(int i = 0; i < MD5_DIGEST_LENGTH; i++)
+    sprintf(&md5[i*2], "%02x",(unsigned int) c[i]);
 }

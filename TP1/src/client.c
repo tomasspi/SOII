@@ -10,13 +10,23 @@
 #include <unistd.h>
 #include <signal.h>
 #include <termios.h>
+#include <openssl/md5.h>
 
 #include "sockets.h"
 
 void ask_login(char buf[STR_LEN]);
+void show_mbr();
 void show_prompt(int32_t sockfd, ssize_t rw, char buffer[STR_LEN]);
 
 int32_t sockfd;
+
+struct mbr
+{
+  1
+  2
+  3
+  4
+}
 
 /**
  * @brief
@@ -173,33 +183,67 @@ void show_prompt(int32_t sockfd, ssize_t rw, char buffer[STR_LEN])
 
           int32_t fifd = create_clsocket(port_fi);
 
-          printf("%s\n", "About to burn.");
+          printf("%s\n", "Writing...");
 
           FILE *usb;
           char path_usb[STR_LEN];
           tok = strtok(NULL, " ");
           strcpy(path_usb,tok);
 
+          printf("USB %s\n", path_usb);
+
+          char md5_recv[33];
+          tok = strtok(NULL, " ");
+
+          sprintf(md5_recv, "%s", tok);
+
           usb = fopen(path_usb, "wb");
 
           if(usb == NULL)
-            perror("open usb");
+            {
+              perror("open usb");
+              exit(EXIT_FAILURE);
+            }
 
-          FILE *file = fdopen(fifd, "r");
+          //------ MD5 del archivo ------
+          unsigned char c[MD5_DIGEST_LENGTH];
+          MD5_CTX mdContext;
+          size_t bytes;
+          unsigned char data[1024];
+          MD5_Init(&mdContext);
 
-          if(file == NULL)
-            perror("open fifd");
+          do
+            {
+              rw = recv(fifd, buffer, STR_LEN, 0);
+              if(rw == -1)
+                perror("recv file");
 
-          while((rw = recv(fifd, buffer, STR_LEN, 0)) > 0)
-            fwrite(buffer, sizeof(char), (size_t) rw, usb);
+              fwrite(buffer, sizeof(char), (size_t) rw, usb);
+
+              size -= (size_t) rw;
+            }
+          while(size != 0);
 
           sync();
+
+          while((bytes = fread(data, 1, 1024, usb)) != 0)
+            MD5_Update(&mdContext, data, bytes);
+
+          MD5_Final(c,&mdContext);
+
+          char md5[33];
+          //------ MD5 to string ------
+          for(int i = 0; i < MD5_DIGEST_LENGTH; i++)
+            sprintf(&md5[i*2], "%02x",(unsigned int) c[i]);
+
           fclose(usb);
 
-          printf("%s\n", "DONE.");
-        }
+          printf("Done.\n");
+          printf("MD5R: %s\n MD5: %s\n", md5_recv, md5);
 
-      printf("%s\n", buffer);
+          show_mbr();
+        }
+      else printf("%s\n", buffer);
 
       if(rw == -1)
         {
@@ -207,4 +251,19 @@ void show_prompt(int32_t sockfd, ssize_t rw, char buffer[STR_LEN])
           goto read;
         }
   	}
+}
+
+void show_mbr(char path_usb[STR_LEN])
+{
+  FILE *f;
+  char c[512];
+
+  f = fopen(path_usb, "r");
+  fseek(f, 0, SEEK_SET);
+
+  for(int i = 0; i < 512; i++)
+    {if(fread(c, 1, 512, f) > 9)
+      printf("%02x\n", c[i]);}
+
+  fclose(f);
 }

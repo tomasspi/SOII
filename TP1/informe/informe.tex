@@ -151,10 +151,77 @@
 \setlength{\parskip}{0.5em}
 
 \section{Introducción}
+\label{intro}
+
+\subsection{Objetivo}
+\label{objetivo}
+El objetivo del trabajo es diseñar e implementar un software que haga uso de las
+API de IPC del Sistema Operativo, implementando los conocimientos adquiridos en
+las clases.
+
+\subsection{Arquitectura del Sistema}
+\label{sistema}
+El sistema está formado por dos \emph{Hosts}. El \emph{Host 1} es el cliente,
+que se conecta al servidor (\emph{Host 2}) a un puerto fijo.
+
+El servidor está conformado por tres procesos, cada uno con funciones específicas.
+
+\begin{enumerate}[leftmargin=1.5cm]
+  \item \textbf{\emph{Auth service}}: encargado de proveer las funcionalidades relacionadas
+  al manejo de la base de dato de los usuarios:
+
+  \begin{itemize}[leftmargin=1cm]
+    \item Validar de usuario.
+    \item Listar usuarios.
+    \item Cambiar contraseña del usuario.
+  \end{itemize}
+
+  \item \textbf{\emph{File service}}: encargado de proveer las funcionalidades relacionadas
+  con las imágenes desponibles para descarga:
+
+  \begin{itemize}[leftmargin=1cm]
+    \item Mostrar información de las imágenes disponibles.
+    \item Establecer la transferencia de la imagen a través de un nuevo
+    \emph{socket}.
+  \end{itemize}
+
+  \item \textbf{\emph{Primary server}}: encargado de establecer las conexiones y recibir
+  los comandos del cliente. Hace uso de los dos procesos anteriores.
+\end{enumerate}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[scale=0.5]{arqtp1.png}
+  \caption{Arquitectura del sistema.}
+  \label{arqui}
+\end{figure}
 
 \section{Descripción general}
+\label{desc}
+
+\subsection{Esquema del proyecto}
+\label{esq}
+
+El proyecto está dividido en las siguientes carpetas:
+
+\begin{itemize}[leftmargin=1.5cm]
+  \item \textbf{bin}: contiene los archivos ejecutables.
+  \item \textbf{inc}: contiene los headers utilizados por los códigos fuente.
+  \item \textbf{imgs}: contiene las imágenes disponibles para descargar.
+  \item \textbf{res}: contiene la base de datos de los usuarios.
+  \item \textbf{src}: contiene los códigos fuente.
+\end{itemize}
+
+
 
 \section{Diseño de solución}
+\label{solucion}
+
+\subsection{Comunicación IPC}
+\label{ipc}
+Para realizar la comunicación entre los procesos del servidor se decidió utilzar
+el sistema de cola de mensajes \emph{SystemV}, ya que múltiples procesos pueden
+acceder a una misma cola de mensajes sin problemas de concurrencia.
 
 \section{Implementación y resultados}
 

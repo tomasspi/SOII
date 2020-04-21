@@ -20,7 +20,7 @@ all: client server
 
 client:
 	mkdir $(ODIR)
-	$(CC) $(CFLAGS) $(SDIR)/sockets.c $(SDIR)/client.c -o $(ODIR)/$(CL)
+	$(CC) $(CFLAGS) $(SDIR)/sockets.c $(SDIR)/client.c -o $(ODIR)/$(CL) $(MD5)
 
 server:
 	$(CC) $(CFLAGS) $(SDIR)/sockets.c $(SDIR)/primary_server.c -o $(ODIR)/$(SV)
