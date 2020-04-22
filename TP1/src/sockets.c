@@ -58,7 +58,7 @@ ssize_t recv_cmd(int sockfd, void *cmd)
  * @param  port Puerto al que se desea conectar.
  * @return      File descriptor del socket creado.
  */
-int create_svsocket(uint16_t port)
+int create_svsocket(char *ip, uint16_t port)
 {
   int sockfd;
   struct sockaddr_in sv_addr;
@@ -76,7 +76,7 @@ int create_svsocket(uint16_t port)
   memset((char *) &sv_addr, 0, sizeof(sv_addr));
 
   sv_addr.sin_family = AF_INET;
-  sv_addr.sin_addr.s_addr = inet_addr(SV_IP);
+  sv_addr.sin_addr.s_addr = inet_addr(ip);
   sv_addr.sin_port = htons(port);
 
   int b = bind(sockfd, (struct sockaddr *) &sv_addr, sizeof(sv_addr));
@@ -95,7 +95,7 @@ int create_svsocket(uint16_t port)
  * @param  port Puerto al que se desea conectar.
  * @return      File descriptor del socket conectado.
  */
-int create_clsocket(uint16_t port)
+int create_clsocket(char *ip, uint16_t port)
 {
   int sockfd;
   struct sockaddr_in sv_addr;
@@ -111,11 +111,11 @@ int create_clsocket(uint16_t port)
   memset((char *) &sv_addr, '0', sizeof(sv_addr));
 
   sv_addr.sin_family = AF_INET;
-  sv_addr.sin_addr.s_addr = inet_addr(SV_IP);
+  sv_addr.sin_addr.s_addr = inet_addr(ip);
   sv_addr.sin_port = htons(port);
 
   int c = connect(sockfd, (struct sockaddr *)&sv_addr, sizeof(sv_addr));
-  
+
   if(c == -1)
   {
     perror("connect");

@@ -53,11 +53,17 @@ void kill_childs(void)
     perror("msgctl");
 }
 
-int main(void)
+int main(int argc, char *argv[])
 {
   atexit(kill_childs);
 
-  int sockfd = create_svsocket(port_ps);
+  if(argc < 2)
+    {
+      fprintf(stderr, "Uso: %s Dirección IP\n", argv[0]);
+      exit(EXIT_FAILURE);
+    }
+
+  int sockfd = create_svsocket(argv[1], port_ps);
 
   ssize_t rw;
   char msg_buf[STR_LEN];
@@ -105,7 +111,7 @@ int main(void)
     }
 
   char *arga[] = {"./auth", NULL};
-  char *argf[] = {"./fileserv", NULL};
+  char *argf[] = {"./fileserv", argv[1], NULL};
 
   if(auth_id == 0)
     execv(arga[0], arga);

@@ -14,8 +14,6 @@ enum ports        /**< Puertos para la conexión de los sockets. */
 
 #define STR_LEN 1024  /**< Largo de los strings */
 
-#define SV_IP "127.0.0.1" /**< Dirección IP del servidor. */
-
 /**
  * @brief
  * Escribe en el socket deseado un mensaje.
@@ -40,7 +38,7 @@ ssize_t recv_cmd(int sockfd, void *cmd);
  * @param  port Puerto al que se desea conectar.
  s* @return      File descriptor del socket creado.
  */
-int create_svsocket(uint16_t port);
+int create_svsocket(char *ip, uint16_t port);
 
 /**
  * @brief
@@ -48,4 +46,4 @@ int create_svsocket(uint16_t port);
  * @param  port Puerto al que se desea conectar.
  * @return      File descriptor del socket conectado.
  */
-int create_clsocket(uint16_t port);
+int create_clsocket(char *ip, uint16_t port);

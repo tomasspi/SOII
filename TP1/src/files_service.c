@@ -31,8 +31,14 @@ void print_images(int msqid, struct msg buf);
 int get_images();
 char *get_md5(char *path);
 
-int main(void)
+int main(int argc, char *argv[])
 {
+  if(argc < 2)
+    {
+      fprintf(stderr, "Uso: %s Dirección IP\n", argv[1]);
+      exit(EXIT_FAILURE);
+    }
+
   printf("Files service started.\n");
 
   struct msg buf;
@@ -81,7 +87,7 @@ int main(void)
         strcpy(usb,tok);
 
   //------ Crea el nuevo socket ------
-        int fifd  = create_svsocket(port_fi);
+        int fifd  = create_svsocket(argv[1], port_fi);
         int newfd;
 
         if(fifd == -1)

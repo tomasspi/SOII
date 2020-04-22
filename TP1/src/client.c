@@ -19,7 +19,7 @@ void ask_login(char buf[STR_LEN]);
 char *get_md5_usb(char path[STR_LEN], size_t size);
 void little_to_big(char little[4], char big[8]);
 void show_mbr(char path[STR_LEN]);
-void show_prompt(int32_t sockfd, ssize_t rw, char buffer[STR_LEN]);
+void show_prompt(int32_t sockfd, ssize_t rw, char buffer[STR_LEN], char ip[STR_LEN]);
 
 int32_t sockfd;
 
@@ -45,7 +45,7 @@ void sig_handler()
   exit(EXIT_SUCCESS);
 }
 
-int main(void)
+int main(int argc, char *argv[])
 {
   struct sigaction ctrlc;
 
@@ -59,11 +59,17 @@ int main(void)
       exit(EXIT_FAILURE);
     }
 
+  if(argc < 2)
+    {
+      fprintf(stderr, "Uso: %s Dirección IP del servidor\n", argv[0]);
+      exit(EXIT_FAILURE);
+    }
+
   int32_t tries = 3;
 
   char buffer[STR_LEN];
 
-	sockfd = create_clsocket(port_ps);
+	sockfd = create_clsocket(argv[1], port_ps);
   ssize_t rw;
 
   do
@@ -83,7 +89,7 @@ send: rw = send_cmd(sockfd,buffer);
       if(strchr(buffer,'/') != NULL)
         {
           printf("\nLast login: %s\n", buffer);
-          show_prompt(sockfd, rw, buffer);
+          show_prompt(sockfd, rw, buffer, argv[1]);
         }
       else
         {
@@ -158,7 +164,7 @@ get_pass:
  * @param rw     Resultado de la operación de Lectura/escritura.
  * @param buffer Mensaje enviado/recibido.
  */
-void show_prompt(int32_t sockfd, ssize_t rw, char buffer[STR_LEN])
+void show_prompt(int32_t sockfd, ssize_t rw, char buffer[STR_LEN], char ip[STR_LEN])
 {
   prompt:
 
@@ -202,7 +208,7 @@ void show_prompt(int32_t sockfd, ssize_t rw, char buffer[STR_LEN])
           sscanf(tok, "%lud", &size);
           size_for_md5 = size;
 
-          int32_t fifd = create_clsocket(port_fi);
+          int32_t fifd = create_clsocket(ip, port_fi);
 
           printf("Writing...\n");
 
