@@ -48,6 +48,9 @@ void kill_childs(void)
 
   buf.mtype = to_file;
   msgsnd(msqid, &buf, sizeof(buf.msg), IPC_NOWAIT);
+
+  if (msgctl(msqid, IPC_RMID, NULL) == -1) /* Destruye la cola */
+    perror("msgctl");
 }
 
 int main(void)
@@ -135,23 +138,7 @@ int main(void)
               //------ Fin Lectura ------
 
               if(!strcmp(msg_buf,"exit"))
-                {
-                  close(newfd);
-                  buf.mtype = to_auth;
-                  strcpy(buf.msg, "exit");
-
-                  msgsnd(msqid, &buf, sizeof(buf.msg), IPC_NOWAIT);
-
-                  buf.mtype = to_file;
-                  msgsnd(msqid, &buf, sizeof(buf.msg), IPC_NOWAIT);
-
-                  if (msgctl(msqid, IPC_RMID, NULL) == -1) /* Destruye la cola */
-                    {
-                      perror("msgctl");
-                      exit(EXIT_FAILURE);
-                    }
-                  exit(EXIT_SUCCESS);
-                }
+                exit(EXIT_SUCCESS);
 
               //------ Identificación y envío de mensaje ------
               if(strchr(msg_buf,',') != NULL) //------ Inicio de sesión ------

@@ -47,62 +47,30 @@
 	colorlinks = true,
 	linkcolor  = black,
 	urlcolor   = black,
-    citecolor  = black,
-    anchorcolor = black}
+  citecolor  = black,
+  filecolor  = black,
+  anchorcolor = black}
 % -------------------------------------------------------- %
 % Definicion de colores para el codigo
 
-\lstdefinelanguage{XML}
-{
-  basicstyle=\ttfamily\footnotesize,
-  morestring=[b]",
-  moredelim=[s][\bfseries\color{Maroon}]{<}{\ },
-  moredelim=[s][\bfseries\color{Maroon}]{</}{>},
-  moredelim=[l][\bfseries\color{Maroon}]{/>},
-  moredelim=[l][\bfseries\color{Maroon}]{>},
-  morecomment=[s]{<?}{?>},
-  morecomment=[s]{<!--}{-->},
-  commentstyle=\color{DarkOliveGreen},
-  stringstyle=\color{blue},
-  identifierstyle=\color{red}
-}
-
-\lstdefinelanguage{SQL}
-{
-  morekeywords={
-    INSERT,
-    INTO,
-    VALUES
-  },
-  morestring=[b]',
-  breaklines=true,
-  frame=single,
-  basicstyle=\ttfamily,
-  keywordstyle=\color{Blue},
-  commentstyle=\color{Brown},
-  %identifierstyle=\color{red},
-  stringstyle=\ttfamily\color{OliveGreen},
-  backgroundcolor=\color{white}
-}
-
 \lstdefinelanguage{Ce}{
-    backgroundcolor=\color{white},		%color de fondo
-    commentstyle=\color{CadetBlue},		%color de los comentarios
-    keywordstyle=\color{Blue},			%color de las palabras reservadas
-    numberstyle=\tiny\color{Dandelion},	%numero de línea con tamaño y color
-    numbers=left,                    	%posicion de los numeros
-    numbersep=5pt,   					%espaciado entre los numeros
-    stringstyle=\color{OliveGreen},		%color de las strings
-    basicstyle=\ttfamily\footnotesize,	%estilo de fuente
-    breakatwhitespace=false,         	%romper estacios en blanco
-    breaklines=true,                 	%romper lineas
-    frame=single,						%para encuadrar el codigo
-    rulecolor=\color{black},			%color del cuadro
-    showspaces=false,
-    showstringspaces=false,
-    showtabs=false,
-    tabsize=2,
-    language=C
+  backgroundcolor=\color{white},		%color de fondo
+  commentstyle=\color{CadetBlue},		%color de los comentarios
+  keywordstyle=\color{Plum},			%color de las palabras reservadas
+  numberstyle=\tiny\color{ForestGreen},	%numero de línea con tamaño y color
+  numbers=left,                    	%posicion de los numeros
+  numbersep=5pt,   					%espaciado entre los numeros
+  stringstyle=\color{OliveGreen},		%color de las strings
+  basicstyle=\ttfamily\footnotesize,	%estilo de fuente
+  breakatwhitespace=false,         	%romper estacios en blanco
+  breaklines=true,                 	%romper lineas
+  frame=single,						%para encuadrar el codigo
+  rulecolor=\color{black},			%color del cuadro
+  showspaces=false,
+  showstringspaces=false,
+  showtabs=false,
+  tabsize=2,
+  language=C
 }
 
 \renewcommand{\lstlistingname}{Código}
@@ -170,7 +138,7 @@ El servidor está conformado por tres procesos, cada uno con funciones específi
   \item \textbf{\emph{Auth service}}: encargado de proveer las funcionalidades relacionadas
   al manejo de la base de dato de los usuarios:
 
-  \begin{itemize}[leftmargin=1cm]
+  \begin{itemize}[leftmargin=1cm, nosep]
     \item Validar de usuario.
     \item Listar usuarios.
     \item Cambiar contraseña del usuario.
@@ -179,7 +147,7 @@ El servidor está conformado por tres procesos, cada uno con funciones específi
   \item \textbf{\emph{File service}}: encargado de proveer las funcionalidades relacionadas
   con las imágenes desponibles para descarga:
 
-  \begin{itemize}[leftmargin=1cm]
+  \begin{itemize}[leftmargin=1cm, nosep]
     \item Mostrar información de las imágenes disponibles.
     \item Establecer la transferencia de la imagen a través de un nuevo
     \emph{socket}.
@@ -191,13 +159,34 @@ El servidor está conformado por tres procesos, cada uno con funciones específi
 
 \begin{figure}[H]
   \centering
-  \includegraphics[scale=0.5]{arqtp1.png}
+  \includegraphics[scale=0.6]{arqtp1.png}
   \caption{Arquitectura del sistema.}
   \label{arqui}
 \end{figure}
 
+\newpage
+
 \section{Descripción general}
 \label{desc}
+
+\subsection{Restricciones}
+\label{restrictions}
+A las restricciones dadas (ver \href{run:../Enunciado.pdf}
+{\texttt{Enunciado.pdf}}) se le agregaron las siguientes:
+
+\begin{enumerate}[leftmargin=1.5cm]
+  \item El usuario y contraseña no pueden ser los mismos.
+  \item El comando para descargar la imagen debe tener el
+  siguiente formato:
+
+  \begin{center}
+    \verb|file down `nombre_imagen' `directorio_usb'|
+  \end{center}
+
+  \item Las imágenes para descargar deben estar ubicadas en la
+  carpeta \verb|imgs|.
+\end{enumerate}
+
 
 \subsection{Esquema del proyecto}
 \label{esq}
@@ -206,41 +195,223 @@ El proyecto está dividido en las siguientes carpetas:
 
 \begin{itemize}[leftmargin=1.5cm]
   \item \textbf{bin}: contiene los archivos ejecutables.
-  \item \textbf{inc}: contiene los headers utilizados por los códigos fuente.
+  \item \textbf{inc}: contiene los \emph{headers} utilizados por los
+  códigos fuente:
+
+  \begin{itemize}[leftmargin=1cm, nosep]
+    \item \emph{messages.h}: \emph{header} con los datos para el
+    envío y recepción de mensajes entre los procesos que conforman
+    el servidor.
+    \item \emph{sockets.h}: \emph{header} con los datos y funciones
+    para la utilización de los \emph{sockets}: su creación y su
+    lectura/escritura.
+  \end{itemize}
+
   \item \textbf{imgs}: contiene las imágenes disponibles para descargar.
   \item \textbf{res}: contiene la base de datos de los usuarios.
   \item \textbf{src}: contiene los códigos fuente.
+
+  \begin{itemize}[leftmargin=1cm, nosep]
+    \item \emph{client.c}
+    \item \emph{primary\_server.c}
+    \item \emph{auth\_service.c}
+    \item \emph{files\_service.c}
+    \item \emph{sockets.c}
+  \end{itemize}
+
 \end{itemize}
 
-
+\newpage
 
 \section{Diseño de solución}
 \label{solucion}
 
-\subsection{Comunicación IPC}
+\subsection{Comunicación entre los procesos}
 \label{ipc}
-Para realizar la comunicación entre los procesos del servidor se decidió utilzar
-el sistema de cola de mensajes \emph{SystemV}, ya que múltiples procesos pueden
-acceder a una misma cola de mensajes sin problemas de concurrencia.
+Además de la implementación de \emph{sockets}, se debe elegir
+otro mecanismo de los IPC existentes:
 
-\section{Implementación y resultados}
+\begin{itemize}[leftmargin=1.5cm]
+  \item \emph{PIPEs} y \emph{FIFOs}.
+  \item Semáforos.
+  \item \emph{Signals}.
+  \item Memoria compartida.
+  \item Cola de mensajes.
+\end{itemize}
 
-\section{Conclusiones}
+Para realizar la comunicación entre los procesos del servidor se
+decidió utilzar el sistema de cola de mensajes \emph{SystemV}, ya
+que múltiples procesos pueden acceder a una misma cola de mensajes
+sin problemas de concurrencia.
 
-\begin{lstlisting}[caption={Prueba Ce language.}, language=Ce]
-#include<iostream>
+La cola de mensajes es \emph{única} para los tres procesos que
+conforman el servidor y es creada por el proceso \emph{server}.
+Los estructura de mensaje utilizada para la cola es la siguiente:
 
-using namespace std;
-
-int main()
+\begin{lstlisting}[caption={Estructura de mensaje.}, label={msg}, language=Ce]
+struct msg            /* Estructura para mensajes generales. */
 {
-	//pueba comentario
-	string test = "hola como va";
-	char c = 'h';
-	int a = 9;
-	cout<<a+5;
-	return 0;
-}
+  long mtype;         /* Identificador del mensaje. */
+  char msg[STR_LEN];  /* Contenido del mensaje. */
+};
 \end{lstlisting}
 
+El identificador de mensaje que se muestra en el Código \ref{msg}
+puede tomar los siguientes valores:
+
+\begin{itemize}[leftmargin=1.5cm]
+  \item \textbf{to\_prim}: los mensajes dirigidos al proceso
+  \emph{server}.
+  \item \textbf{to\_auth}: los mensajes dirigidos al proceso
+  \emph{auth}.
+  \item \textbf{to\_file}: los mensajes dirigidos al proceso
+  \emph{fileserv}.
+\end{itemize}
+
+\newpage
+
+\subsection{Procesos del servidor}
+\label{server}
+
+A continuación se explica brevemente el diseño para cada uno de los
+procesos involucrados en el sistema\footnote{Para información más
+detallada sobre el funcionamiento de cada proceso se recomienda ver
+la documentación del mismo}.
+
+\subsubsection{\emph{Server}}
+\label{server_ps}
+Es el intermediario entre el cliente y los otros dos procesos que
+conforman el servidor (ver Figura \ref{arqui}).
+
+Este proceso tiene como hijos al proceso \emph{auth} y \emph{fileserv}.
+La creación de estos procesos se realiza una vez creados los medios
+de comunicación necesarios (\emph{socket} y cola de mensajes). Se
+decidió por esta implementación debido a que de esta forma los
+procesos hijos podrán acceder a la cola de mensajes sin problemas.
+
+El protocolo de envío de mensajes entre ellos se muestra en el
+siguiente diagrama de secuencia.
+
+\begin{figure}[H]
+  \center
+  \includegraphics[height=14cm]{protocolo.png}
+  \caption{Diagrama de secuencia de la comunicación cliente-servidor.}
+  \label{com_seq}
+\end{figure}
+
+\subsubsection{\emph{Auth}}
+\label{auth_ps}
+Proceso encargado del manejo de la base de datos de los usuarios y
+de la validación de las credenciales enviadas por el usuario.
+
+Se permiten tres intentos de inicio de sesión, al superarse este
+límite, el usuario se bloquea y se terminan todos los procesos del
+sistema. Si el inicio de sesión es exitoso, se modifica la fecha
+y hora del último inicio de sesión a la fecha actual.
+
+\textbf{Base de datos}
+
+Para simular la base de datos se utiliza un archivo \verb|.txt| con
+valores separados con coma. La estructura sus contenidos es la
+siguiente:
+
+\begin{center}
+  \verb|ID,usuario,contraseña,estado,última_conexión|
+\end{center}
+
+
+\subsubsection{\emph{Fileserv}}
+\label{files_ps}
+Este proceso se encarga del manejo de las imágenes disponibles
+para descargar, las cuales se encuentran en la carpeta \verb|imgs|
+y también de enviar la imagen seleccionada por el usuario mediante
+un nuevo socket.
+
+\subsection{\emph{Makefile}}
+\label{make}
+Las recetas disponibles en el \emph{Makefile} son las siguientes:
+
+\begin{enumerate}
+  \item \emph{all}: genera los ejecutables del sistema.
+  \item \emph{check}: corre \emph{cppcheck} sobre el directorio
+  \verb|src|.
+  \item \emph{doc}: genera la documentación del código en HTML
+  utilizando \emph{doxygen} en la carpeta llamada \verb|Doc| y la
+  abre en el navegador  \emph{Firefox}.\footnote{Si no se encuentra
+  instalado, se sugiere cambiar el navegador en la receta.}
+  \item \emph{client}: crea el directorio \verb|bin| y genera el
+  ejecutable correspondiente al cliente.
+  \item \emph{server}: general los ejecutables correspondientes al
+  servidor.
+  \item \emph{clean}: elimina los directorios \verb|bin| y
+  \verb|Doc|.
+\end{enumerate}
+
+
+\section{Implementación y resultados}
+\label{resultados}
+
+\subsection{\emph{Sockets}}
+El método de comunicación de \emph{sockets} es utilizado por tres
+procesos: \emph{client}, \emph{server} y \emph{fileserv}, por lo
+que se decidió realizar un \emph{header} con las funciones que se
+utilizan para la creación de los \emph{sockets} y su lectura/
+escritura.
+
+A continuación se muestra brevemente el contenido del \emph{header}.
+
+\begin{lstlisting}[caption={\emph{Header} para el uso de \emph{sockets}.}, label={socket}, language=Ce]
+enum ports        /** Puertos para la conexion de los sockets. */
+{
+  port_ps = 4444, /** Puerto para `primary_server'. */
+  port_fi = 5555  /** Puerto para `files_service'. */
+};
+
+#define STR_LEN 1024  /** Largo de los strings */
+
+#define SV_IP "127.0.0.1" /** Direccion IP del servidor. */
+
+/** Escribe en el socket deseado un mensaje. */
+ssize_t send_cmd(int sockfd, void *cmd);
+
+/** Lee el mensaje del socket deseado. */
+ssize_t recv_cmd(int sockfd, void *cmd);
+
+/** Crea el socket en el puerto pedido. */
+int create_svsocket(uint16_t port);
+
+/** Conecta al cliente en el puerto del servidor. */
+int create_clsocket(uint16_t port);
+\end{lstlisting}
+
+\subsection{Mensajes}
+\label{msg_h}
+
+
+
+\section{Conclusiones}
+\label{conc}
+
+
+\begin{thebibliography}{9}
+\bibitem{beejs}
+\emph{Beej's Guide to Unix IPC, Message Queues},
+\\\texttt{\href{https://beej.us/guide/bgipc/html/multi/mq.html}{Link to Message Queues}}
+
+
+\bibitem{replace}
+\emph{Codeforwin: Replace text in a line},
+\\\texttt{\href{https://codeforwin.org/2018/02/c-program-replace-specific-line-a-text-file.html}
+{Link to Replace text}}
+
+
+\bibitem{date}
+\emph{Stackoverflow: How to get date and time},
+\\\texttt{\href{https://stackoverflow.com/questions/1442116/how-to-get-the-date-and-time-values-in-a-c-program}
+{Lonk to Date-time}}
+
+\bibitem{seqdiag}
+\emph{Web Sequence Diagram},
+\\\texttt{\href{https://www.websequencediagrams.com/}{Web sequence diagrams}}
+\end{thebibliography}
 \end{document}

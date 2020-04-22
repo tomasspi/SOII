@@ -34,6 +34,6 @@ enum status
 
 struct msg            /** Estructura para mensajes generales. */
 {
-  long mtype;         /**< Identificador del mensaje: para auth o para files. */
-  char msg[STR_LEN];  /**< Comando ingresado por el usuario. */
+  long mtype;         /**< Identificador del mensaje. */
+  char msg[STR_LEN];  /**< Contenido del mensaje. */
 };

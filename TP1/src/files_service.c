@@ -29,7 +29,7 @@
 
 void print_images(int msqid, struct msg buf);
 int get_images();
-void get_md5(FILE *file, char md5[33]);
+char *get_md5(char *path);
 
 int main(void)
 {
@@ -106,8 +106,7 @@ int main(void)
         char size_s[STR_LEN] = "";
         sprintf(size_s, "%ld", size);
 
-        char md5s[33];
-        get_md5(imgn, md5s);
+        char *md5s = get_md5(img);
 
         sprintf(buf.msg, "Download %s %s %s", size_s, usb, md5s);
 
@@ -208,11 +207,9 @@ void print_images(int msqid, struct msg buf)
       fseek(file, 0, SEEK_END);
       size = ftell(file);
       size /= 1000000;
-
-      char md5[33];
-      get_md5(file, md5);
-
       fclose(file);
+
+      char *md5 = get_md5(path);
 
       sprintf(buf.msg, "%-35s %-14ld %-15s\n", direct->d_name, size, md5);
       strcat(msg, buf.msg);
@@ -232,21 +229,28 @@ void print_images(int msqid, struct msg buf)
  * @param file     Archivo al cual se desea calcular el hash MD5.
  * @param md5[33]  String donde se guarda el hash MD5.
  */
-void get_md5(FILE *file, char md5[33])
+char *get_md5(char *path)
 {
+  FILE *file = fopen(path, "rb");
+  char buf[STR_LEN];
+  size_t bytes;
+
   //------ MD5 del archivo ------
   unsigned char c[MD5_DIGEST_LENGTH];
   MD5_CTX mdContext;
-  size_t bytes;
-  unsigned char data[1024];
+
   MD5_Init(&mdContext);
 
-  while ((bytes = fread(data, 1, 1024, file)) != 0)
-    MD5_Update(&mdContext, data, bytes);
+  while ((bytes = fread(buf, sizeof(char), sizeof(buf), file)) != 0)
+    MD5_Update(&mdContext, buf, bytes);
 
   MD5_Final(c,&mdContext);
+
+  char *md5= malloc(MD5_DIGEST_LENGTH * 2 + 1);
 
   //------ MD5 to string ------
   for(int i = 0; i < MD5_DIGEST_LENGTH; i++)
     sprintf(&md5[i*2], "%02x",(unsigned int) c[i]);
+
+  return md5;
 }
