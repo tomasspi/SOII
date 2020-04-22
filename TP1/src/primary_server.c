@@ -35,20 +35,10 @@ void send_client(ssize_t rw, int newfd, struct msg *buf);
 
 /**
  * @brief
- * En caso de que ocurra algún error, se envía a los procesos hijos un 'exit'
- * para que finalicen su ejecución.
+ * En caso de que ocurra algún error, se elimina la cola de mensajes.
  */
-void kill_childs(void)
+void delete_queue(void)
 {
-  close(newfd);
-  buf.mtype = to_auth;
-  strcpy(buf.msg, "exit");
-
-  msgsnd(msqid, &buf, sizeof(buf.msg), IPC_NOWAIT);
-
-  buf.mtype = to_file;
-  msgsnd(msqid, &buf, sizeof(buf.msg), IPC_NOWAIT);
-
   if (msgctl(msqid, IPC_RMID, NULL) == -1) /* Destruye la cola */
     perror("msgctl");
 }
@@ -63,8 +53,7 @@ int main(int argc, char *argv[])
       exit(EXIT_FAILURE);
     }
 
-  int sockfd = create_svsocket(argv[1], port_ps);
-
+  int sockfd;
   ssize_t rw;
   char msg_buf[STR_LEN];
 
@@ -81,26 +70,6 @@ int main(int argc, char *argv[])
       perror("msgget");
       exit(EXIT_FAILURE);
     }
-
-  struct sockaddr_in cl_addr;
-  uint cl_len;
-
-  printf("Esuchando en puerto %d...\n", port_ps);
-
-  listen(sockfd, 1);
-  cl_len = sizeof(cl_addr);
-
-  newfd = accept(sockfd, (struct sockaddr *) &cl_addr, &cl_len);
-
-  if(newfd == -1)
-    {
-      perror("accept");
-      exit(EXIT_FAILURE);
-    }
-
-  printf("Conexión aceptada.\n");
-
-  close(sockfd);
 
   int auth_id, files_id, auth_state, files_state;
 
@@ -130,6 +99,29 @@ int main(int argc, char *argv[])
           waitpid(auth_id, &auth_state, WNOHANG);
           waitpid(files_id, &files_state, WNOHANG);
 
+          socket:
+          sockfd = create_svsocket(argv[1], port_ps);
+
+          struct sockaddr_in cl_addr;
+          uint cl_len;
+
+          printf("Esuchando en puerto %d...\n", port_ps);
+
+          listen(sockfd, 1);
+          cl_len = sizeof(cl_addr);
+
+          newfd = accept(sockfd, (struct sockaddr *) &cl_addr, &cl_len);
+
+          if(newfd == -1)
+            {
+              perror("accept");
+              exit(EXIT_FAILURE);
+            }
+
+          printf("Conexión aceptada.\n");
+
+          close(sockfd);
+
     listen:
           while(1)
             {
@@ -144,7 +136,7 @@ int main(int argc, char *argv[])
               //------ Fin Lectura ------
 
               if(!strcmp(msg_buf,"exit"))
-                exit(EXIT_SUCCESS);
+                goto socket;
 
               //------ Identificación y envío de mensaje ------
               if(strchr(msg_buf,',') != NULL) //------ Inicio de sesión ------

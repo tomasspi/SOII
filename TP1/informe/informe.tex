@@ -1,6 +1,7 @@
 \documentclass[12pt,a4paper]{article}
 \usepackage[utf8]{inputenc}
-\usepackage[spanish]{babel}
+\usepackage[spanish]{babel} % Para modificar labels por defecto
+\usepackage[bottom]{footmisc} % Para las notas al pie de la página
 \usepackage[T1]{fontenc}
 \usepackage{siunitx}
 \usepackage{tocbibind} % Bibliografía en el indice
@@ -8,7 +9,7 @@
 \usepackage{amsmath,amssymb,mathrsfs} % Matemáticas varias
 \usepackage{tabularx} % Para las tablas
 \usepackage[title]{appendix} % Para anexos
-\usepackage[spanish]{babel} % Para modificar labels por defecto
+\usepackage{fancyhdr}
 \renewcommand{\baselinestretch}{1} % Interlineado. 1 es estandar
 % --- Arreglos varios para la inclusion de imagenes
 \usepackage{float}
@@ -23,7 +24,7 @@
 \addtolength{\textheight}{4cm}
 % --- Para el encabezado
 \setlength{\headheight}{33pt}
-\usepackage{fancyhdr}
+
 \fancyhead[R]{\includegraphics[height=1cm]{logo_fcefyn_nuevo.jpg}}\fancyhead[L]{\includegraphics[height=1cm]{unc1_a.jpg}}\fancyhead[C]{} \fancyfoot[C]{Página \thepage} \renewcommand{\footrulewidth}{0.4pt}
 \pagestyle{fancy}
 % --- Para las tablas
@@ -34,8 +35,6 @@
 \usepackage[numbered]{bookmark} % Para que figure las secciones en el PDF
 \usepackage{listings} % Para poner código
 \usepackage{enumitem} % Para editar las propiedades de los items
-\usepackage{color}
-\usepackage[bottom]{footmisc} % Para las notas al pie de la página
 \lstset{frame=single} % Código en un cuadro
 % --- Para Anexo
 \addto\captionsspanish{%
@@ -166,6 +165,19 @@ El servidor está conformado por tres procesos, cada uno con funciones específi
 
 \newpage
 
+\subsection{Definiciones, Acrónimos y Abreviaturas}
+\label{daa}
+
+\begin{itemize}
+  \item \emph{API}: \emph{Application Programming Interface}. Es un conjunto
+  de funciones ofrecidas para ser utilizadas por otro software.
+  \item \emph{IPC}: \emph{Inter-Process Communication}. Mecanismo del Sistema
+  Operativo que permite a los procesos comunicarse y sincronizarse entre sí.
+  \item \emph{TCP/IP}: conjunto de protocolos que posibilitan las comunicaciones
+  de Internet.
+\end{itemize}
+
+
 \section{Descripción general}
 \label{desc}
 
@@ -221,8 +233,15 @@ El proyecto está dividido en las siguientes carpetas:
 
 \end{itemize}
 
-\newpage
+\subsection{Requisitos futuros}
+\label{futurereq}
 
+\begin{itemize}[leftmargin=1.5cm]
+  \item Utilizar \emph{CMake} para generar el \emph{Makefile}.
+  \item Lograr que el comando \emph{exit} no termine la conexión del servidor
+\end{itemize}
+
+% \newpage
 \section{Diseño de solución}
 \label{solucion}
 
@@ -349,7 +368,7 @@ Las recetas disponibles en el \emph{Makefile} son las siguientes:
 
 
 \section{Implementación y resultados}
-\label{resultados}
+\label{impres}
 
 \subsection{\emph{Sockets}}
 El método de comunicación de \emph{sockets} es utilizado por tres
@@ -369,8 +388,6 @@ enum ports        /** Puertos para la conexion de los sockets. */
 
 #define STR_LEN 1024  /** Largo de los strings */
 
-#define SV_IP "127.0.0.1" /** Direccion IP del servidor. */
-
 /** Escribe en el socket deseado un mensaje. */
 ssize_t send_cmd(int sockfd, void *cmd);
 
@@ -378,21 +395,118 @@ ssize_t send_cmd(int sockfd, void *cmd);
 ssize_t recv_cmd(int sockfd, void *cmd);
 
 /** Crea el socket en el puerto pedido. */
-int create_svsocket(uint16_t port);
+int create_svsocket(char *ip, uint16_t port);
 
 /** Conecta al cliente en el puerto del servidor. */
-int create_clsocket(uint16_t port);
+int create_clsocket(char *ip, uint16_t port);
 \end{lstlisting}
 
 \subsection{Mensajes}
 \label{msg_h}
+Como se explicó en la subsección \ref{ipc}, se utiliza una cola de mensajes
+entre los tres procesos que conforman el servidor, por lo que dichos procesos
+utilizan una librería en común: \emph{messages.h}.
 
+\begin{lstlisting}[caption={\emph{Header} para el uso de la cola de mensajes.}, label={msgql}, language=Ce]
+#define STR_LEN 1024 /**< Largo de los strings */
 
+/* Enum con con los destinos de los mensajes a enviar en la cola de mensajes. */
+enum msg_ID
+{
+  to_auth = 1, /* Destinado a `auth_service'. */
+  to_file = 2, /* Destinado a `files_service'. */
+  to_prim = 3  /* Destinado a `primary_server'. */
+};
+
+/* Enum con los estados posibles del usuario. */
+enum status
+{
+  blocked = 1, /* El usuario esta bloqueado. */
+  active  = 2, /* El usuario esta activo. */
+  invalid = 3, /* Credenciales invalidas. */
+  not_reg = 4  /* Es usuario no existe. */
+};
+
+#define QU_PATH  "./server" /* Archivo para crear la cola de mensajes. */
+\end{lstlisting}
+
+En este \emph{header} también se encuentra incluida la estructura de mensaje
+mostrada en el Código \ref{msg}.
+
+\subsection{Resultados}
+\label{resultados}
+A continuación se muestran los resultados obtenidos al correr el programa con
+los comandos requeridos.
+
+\subsubsection{Inicio de sesión}
+\label{login}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[scale=0.6]{login_suc.png}
+  \caption{Inicio de sesión exitoso.}
+  \label{log_suc}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[scale=0.6]{login_f.png}
+  \caption{Inicio de sesión fallido,}
+  \label{log_f}
+\end{figure}
+
+\subsubsection{Listado de usuarios}
+\label{users}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[scale=0.6]{userls.png}
+  \caption{Comando \emph{user ls}.}
+  \label{userls}
+\end{figure}
+
+\subsubsection{Listado de imágenes}
+\label{files}
+
+El comando demora en mostrarse debido a que el cálculo del \emph{hash} MD5 se
+realiza en el momento de ejecución.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[scale=0.6]{filels.png}
+  \caption{Comando \emph{file ls}.}
+  \label{filels}
+\end{figure}
+
+\subsubsection{Descarga de imagen}
+\label{down}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[scale=0.6]{programa.png}
+  \caption{Comando \emph{file down `imagen' `usb'}.}
+  \label{filedown}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[scale=0.6]{hexdump.png}
+  \caption{Comando \emph{hexdump} en USB.}
+  \label{dumpusb}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[scale=0.6]{dumpiso.png}
+  \caption{Comando \emph{hexdump} en imagen.}
+  \label{dumpiso}
+\end{figure}
 
 \section{Conclusiones}
 \label{conc}
+Inserte conclusión horrible aquí.
 
-
+\newpage
 \begin{thebibliography}{9}
 \bibitem{beejs}
 \emph{Beej's Guide to Unix IPC, Message Queues},
@@ -413,5 +527,17 @@ int create_clsocket(uint16_t port);
 \bibitem{seqdiag}
 \emph{Web Sequence Diagram},
 \\\texttt{\href{https://www.websequencediagrams.com/}{Web sequence diagrams}}
+
+\bibitem{filelist}
+\emph{Stackoverflow: How to list files in a directory},
+\\\texttt{\href{https://stackoverflow.com/questions/4204666/how-to-list-files-in-a-directory-in-a-c-program}{Link to list files}}
+
+\bibitem{md5}
+\emph{Stackoverflow: How to calculate MD5},
+\\\texttt{\href{https://stackoverflow.com/questions/10324611/how-to-calculate-the-md5-hash-of-a-large-file-in-c}{Link to calculate MD5}}
+
+\bibitem{md5s}
+\emph{Stackoverflow: How to show MD5 as a string},
+\\\texttt{\href{https://stackoverflow.com/questions/7627723/how-to-create-a-md5-hash-of-a-string-in-c}{Link to MD5 to string}}
 \end{thebibliography}
 \end{document}

@@ -1,5 +1,7 @@
 /**
  * @file messages.h
+ * @brief
+ * Header para los mensajes de SystemV msgqueues.
  *
  * @author Tomás Santiago Piñero
  */

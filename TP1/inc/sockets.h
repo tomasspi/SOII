@@ -1,5 +1,7 @@
 /**
  * @file sockets.h
+ * @brief
+ * Header para el uso de los sockets.
  *
  * @author Tomás Santiago Piñero
  */

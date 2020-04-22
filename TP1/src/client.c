@@ -1,3 +1,11 @@
+/**
+ * @file client.c
+ * @brief
+ * Se conecta al servidor para descargar una imagen de SO y escribirla en un
+ * USB.
+ *
+ * @author Tomás Santiago Piñero
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -23,15 +31,15 @@ void show_prompt(int32_t sockfd, ssize_t rw, char buffer[STR_LEN], char ip[STR_L
 
 int32_t sockfd;
 
-struct __attribute__((__packed__)) mbr /** Estructura para leer la tabla MBR. */
+struct mbr            /** Estructura para leer la tabla MBR. */
 {
-  char boot[1];       /**< Indica si es 'booteable'. */
-  char start_chs[3];  /**< Comienzo de CHS. */
-  char type[1];       /**< Tipo de partición. */
-  char end_chs[3];    /**< Final de CHS. */
-  char start[4];      /**< Sector de arranque de la partición. */
-  char size[4];       /**< Tamaño de la partición (en sectores). */
-};
+  char boot[1];       /** Indica si es 'booteable'. */
+  char start_chs[3];  /** Comienzo de CHS. */
+  char type[1];       /** Tipo de partición. */
+  char end_chs[3];    /** Final de CHS. */
+  char start[4];      /** Sector de arranque de la partición. */
+  char size[4];       /** Tamaño de la partición (en sectores). */
+} __attribute__((__packed__));
 
 /**
  * @brief
@@ -256,6 +264,8 @@ void show_prompt(int32_t sockfd, ssize_t rw, char buffer[STR_LEN], char ip[STR_L
             }
           else
             printf("Escritura fallida.\n");
+
+          close(fifd);
         }
       else printf("%s\n", buffer);
   	}
@@ -286,18 +296,19 @@ void show_mbr(char path_usb[STR_LEN])
       exit(EXIT_FAILURE);
     }
 
+  printf("\n================================\n");
   char boot[3];
   sprintf(boot, "%02x", table.boot[0] & 0xff);
 
   if(!strcmp(boot,"80"))
-    printf("Booteable: Si.\n");
+    printf(" - Booteable: Si.\n");
   else
-    printf("Booteable: No.\n");
+    printf(" - Booteable: No.\n");
 
   char type[3];
   sprintf(type, "%02x", table.type[0] & 0xff);
 
-  printf("Tipo de partición: %s\n", type);
+  printf(" - Tipo de partición: %s\n", type);
 
   char start[8] = "\0";
   char size[8]  = "\0";
@@ -305,26 +316,29 @@ void show_mbr(char path_usb[STR_LEN])
   little_to_big(start, table.start);
 
   long inicio = strtol(start, NULL, 16);
-  if (errno == ERANGE) printf("Over/underflow %ld\n", inicio);
+  if (errno == ERANGE)
+    printf("Over/underflow %ld\n", inicio);
 
-  printf("Sector de inicio: %ld \n", inicio);
+  printf(" - Sector de inicio: %ld \n", inicio);
 
   little_to_big(size, table.size);
 
   long tamanio = strtol(size, NULL, 16);
-  if (errno == ERANGE) printf("Over/underflow %ld\n", tamanio);
+  if (errno == ERANGE)
+    printf("Over/underflow %ld\n", tamanio);
+
   tamanio *= 512;
   tamanio /=1000000;
 
-  printf("Tamaño de la partición: %ld MB\n", tamanio);
+  printf(" - Tamaño de la partición: %ld MB\n\n", tamanio);
 }
 
 /**
  * @brief
  * Función encargada de convertir valores de 4 bytes guardados en little endian
  * a big endian.
- * @param big[8]   Valor en formato big endian.
- * @param littl[4] Valor en formato little endian.
+ * @param big    Valor en big endian.
+ * @param little Valor en little endian.
  */
 void little_to_big(char big[8], char little[4])
 {
@@ -336,6 +350,13 @@ void little_to_big(char big[8], char little[4])
   }
 }
 
+/**
+ * @brief
+ * Función encargada de calcular el hash MD5 de la imagen escrita en el USB.
+ * @param  path Path del USB.
+ * @param  size Tamaño de la imagen.
+ * @return      Hash MD5 de la imagen.
+ */
 char *get_md5_usb(char path[STR_LEN], size_t size)
 {
   FILE *file = fopen(path, "rb");

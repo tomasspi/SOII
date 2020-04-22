@@ -63,83 +63,90 @@ int main(void)
   int tries = 3;
   int auth = 0;
 
-  do
+  while(1)
     {
+      memset(buf.msg, '\0', sizeof(buf.msg));
       msgrcv(msqid, &buf, sizeof(buf.msg), to_auth, 0);
 
-      login(buf.msg, input);
+      if(strstr(buf.msg,",") != NULL)
+      {
+        do
+          {
+            login(buf.msg, input);
 
-      if(check_database(input, database))
-        {
-          switch(check_credentials(input, database))
-            {
-              case blocked:
-                strcpy(buf.msg, "El usuario está bloqueado.\n");
-                break;
+            if(check_database(input, database))
+              {
+                switch(check_credentials(input, database))
+                  {
+                    case blocked:
+                      strcpy(buf.msg, "El usuario está bloqueado.\n");
+                      break;
 
-              case active:
-                strcpy(buf.msg, database[COLUMNAS-1]);
-                get_date(date);
+                    case active:
+                      strcpy(buf.msg, database[COLUMNAS-1]);
+                      get_date(date);
 
-                if(write_database(database, FECHA, date) != 1)
+                      if(write_database(database, FECHA, date) != 1)
+                        perror("write_database");
+
+                      auth = 1;
+                      break;
+
+                    case invalid:
+                      strcpy(buf.msg, "Credenciales inválidas.\n");
+                      tries--;
+
+                      if(tries == 0)
+                        {
+                          strcpy(buf.msg, "El usuario ha sido bloqueado.\n");
+                          if(write_database(database, STATUS, BLOCKED_Q) != 1)
+                            perror("write_database");
+                        }
+                      break;
+                  }
+              } else strcpy(buf.msg,"El usuario no existe.\n");
+
+            buf.mtype = to_prim;
+            msgsnd(msqid, &buf, sizeof(buf.msg), 0);
+          }
+        while(tries && !auth);
+      }
+      else
+       {
+        if(!strcmp(buf.msg, "exit"))
+          {
+            auth = 0;
+            tries = 3;
+          }
+
+        if(!strcmp(buf.msg,"ls"))
+          {
+            buf.mtype = to_prim;
+            print_database(msqid, buf);
+          }
+        else
+          {
+            buf.mtype = to_prim;
+
+            if(!strcmp(buf.msg, database[1]))
+              {
+                strcpy(buf.msg, "User and password can't be the same.\n");
+                msgsnd(msqid, &buf, sizeof(buf.msg), 0);
+              }
+            else
+              {
+                if(write_database(database, PASSWD, buf.msg) != 1)
                   perror("write_database");
 
-                auth = 1;
-                break;
-
-              case invalid:
-                strcpy(buf.msg, "Credenciales inválidas.\n");
-                tries--;
-
-                if(tries == 0)
+                else
                   {
-                    strcpy(buf.msg, "El usuario ha sido bloqueado.\n");
-                    if(write_database(database, STATUS, BLOCKED_Q) != 1)
-                      perror("write_database");
+                    strcpy(database[COLUMNAS-3],buf.msg);
+
+                    strcpy(buf.msg, "Password changed successfully.\n");
+                    msgsnd(msqid, &buf, sizeof(buf.msg), 0);
                   }
-                break;
-            }
-        } else strcpy(buf.msg,"El usuario no existe.\n");
-
-      buf.mtype = to_prim;
-      msgsnd(msqid, &buf, sizeof(buf.msg), 0);
-    }
-  while(tries && !auth);
-
-  while(auth)
-    {
-      msgrcv(msqid, &buf, sizeof(buf.msg), to_auth, 0);
-
-      if(!strcmp(buf.msg, "exit"))
-        exit(EXIT_SUCCESS);
-
-      if(!strcmp(buf.msg,"ls"))
-        {
-          buf.mtype = to_prim;
-          print_database(msqid, buf);
-        }
-      else
-        {
-          buf.mtype = to_prim;
-
-          if(!strcmp(buf.msg, database[1]))
-            {
-              strcpy(buf.msg, "User and password can't be the same.\n");
-              msgsnd(msqid, &buf, sizeof(buf.msg), 0);
-            }
-          else
-            {
-              if(write_database(database, PASSWD, buf.msg) != 1)
-                perror("write_database");
-
-              else
-                {
-                  strcpy(database[COLUMNAS-3],buf.msg);
-
-                  strcpy(buf.msg, "Password changed successfully.\n");
-                  msgsnd(msqid, &buf, sizeof(buf.msg), 0);
-                }
-            }
+              }
+          }
         }
     }
 

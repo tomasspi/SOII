@@ -232,8 +232,8 @@ void print_images(int msqid, struct msg buf)
 /**
  * @brief
  * Función encargada de calcular el hash MD5 del archivo.
- * @param file     Archivo al cual se desea calcular el hash MD5.
- * @param md5[33]  String donde se guarda el hash MD5.
+ * @param  path Path del archivo.
+ * @return      Hash MD5 del archivo.
  */
 char *get_md5(char *path)
 {

@@ -1,6 +1,8 @@
 /**
  * @file sockets.c
- *
+ * @brief
+ * Header con las utilizades para la utilización de los sockets.
+ * 
  * @author Tomás Santiago Piñero
  */
 

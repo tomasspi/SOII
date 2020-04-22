@@ -1,5 +1,5 @@
-1,tomas,santiago,activo,22/04/2020 01:29:15
-2,cristobal,arcos,bloqueado,fecha
-3,marcela,valeria,bloqueado,fecha
-4,pablo,ricardo,activo,fecha
+1,tomas,santiago,activo,22/04/2020 15:56:08
+2,doom,slayer,activo,06/06/2006 06:00:00
+3,locha,1337,bloqueado,15/02/2019 09:53:08
+4,sistemas,operativos,bloqueado,15/03/2020 20:53:26
 5,tame,impala,activo,19/04/2020 21:29:38
