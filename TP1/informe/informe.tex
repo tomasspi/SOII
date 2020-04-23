@@ -101,7 +101,7 @@
 
       \Large
       Piñero, Tomás Santiago\\
-      XX de Abril de 2020
+      23 de Abril de 2020
     \end{center}
 \end{titlepage}
 % -------------------------------------------------------- %
@@ -237,8 +237,10 @@ El proyecto está dividido en las siguientes carpetas:
 \label{futurereq}
 
 \begin{itemize}[leftmargin=1.5cm]
-  \item Utilizar \emph{CMake} para generar el \emph{Makefile}.
-  \item Lograr que el comando \emph{exit} no termine la conexión del servidor
+  \item Utilizar \emph{CMake} para lograr la compilación curzada.
+  \item Hacer uso de la \emph{API} de \emph{MySQL} para la base de datos.
+  \item Exigir una longitud determinada de caracteres para usuario y contraseña.
+  \item Permitir el registro de un nuevo usuario en la base de datos.
 \end{itemize}
 
 % \newpage
@@ -377,6 +379,8 @@ que se decidió realizar un \emph{header} con las funciones que se
 utilizan para la creación de los \emph{sockets} y su lectura/
 escritura.
 
+\newpage
+
 A continuación se muestra brevemente el contenido del \emph{header}.
 
 \begin{lstlisting}[caption={\emph{Header} para el uso de \emph{sockets}.}, label={socket}, language=Ce]
@@ -436,7 +440,10 @@ mostrada en el Código \ref{msg}.
 \subsection{Resultados}
 \label{resultados}
 A continuación se muestran los resultados obtenidos al correr el programa con
-los comandos requeridos.
+los comandos requeridos. Las figuras que muestran el listado de usuarios e
+imágenes disponibles fueron sacadas conectado cliente y servidor a la dirección
+\emph{loopback} (\verb|127.0.0.1|), mientras que la descarga de imágenes son de
+un cliente desde una \emph{Raspberry Pi} con dirección IP \verb|192.168.0.177|.
 
 \subsubsection{Inicio de sesión}
 \label{login}
@@ -464,6 +471,8 @@ los comandos requeridos.
   \caption{Comando \emph{user ls}.}
   \label{userls}
 \end{figure}
+
+\newpage
 
 \subsubsection{Listado de imágenes}
 \label{files}
@@ -504,9 +513,16 @@ realiza en el momento de ejecución.
 
 \section{Conclusiones}
 \label{conc}
-Inserte conclusión horrible aquí.
 
-\newpage
+El diseño general del sistema fue claro desde el comienzo. Durante el momento
+de implementación se tuvieron problemas causados tanto por la poca expeciencia
+en el lenguaje C como en el manejo de los errores. La implementación de la cola
+de mensajes y los \emph{sockets} fueron más sencillas de lo esperado.
+
+A pesar de las dificultades, los requerimientos pedidos por la cátedra fueron
+cumplidos.
+
+
 \begin{thebibliography}{9}
 \bibitem{beejs}
 \emph{Beej's Guide to Unix IPC, Message Queues},
