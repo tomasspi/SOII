@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
-#include <netinet/in.h>
+#include <arpa/inet.h>
 #include <sys/ipc.h>
 #include <sys/msg.h>
 #include <unistd.h>
@@ -45,7 +45,7 @@ void delete_queue(void)
 
 int main(int argc, char *argv[])
 {
-  atexit(kill_childs);
+  atexit(delete_queue);
 
   if(argc < 2)
     {
@@ -104,6 +104,7 @@ int main(int argc, char *argv[])
 
           struct sockaddr_in cl_addr;
           uint cl_len;
+          char cl_ip[STR_LEN];
 
           printf("Esuchando en puerto %d...\n", port_ps);
 
@@ -118,7 +119,8 @@ int main(int argc, char *argv[])
               exit(EXIT_FAILURE);
             }
 
-          printf("Conexión aceptada.\n");
+          inet_ntop(AF_INET, &(cl_addr.sin_addr), cl_ip, INET_ADDRSTRLEN);
+          printf("Conexión aceptada a %s\n", cl_ip);
 
           close(sockfd);
 
