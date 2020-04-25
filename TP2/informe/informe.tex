@@ -1,0 +1,361 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel} % Para modificar labels por defecto
+\usepackage[bottom]{footmisc} % Para las notas al pie de la página
+\usepackage[T1]{fontenc}
+\usepackage{siunitx}
+\usepackage{tocbibind} % Bibliografía en el indice
+\usepackage{titlesec} % Posibilidad de editar los formatos de chapter
+\usepackage{amsmath,amssymb,mathrsfs} % Matemáticas varias
+\usepackage{tabularx} % Para las tablas
+\usepackage[title]{appendix} % Para anexos
+\usepackage{fancyhdr}
+\renewcommand{\baselinestretch}{1} % Interlineado. 1 es estandar
+% --- Arreglos varios para la inclusion de imagenes
+\usepackage{float}
+\usepackage[pdftex]{graphicx}
+\usepackage{subfigure}
+\graphicspath{{/home/mrgreen/Pictures/}}
+\usepackage[usenames,dvipsnames]{color}
+\DeclareGraphicsExtensions{.png,.jpg,.pdf,.mps,.gif,.bmp}
+% --- Para las dimensiones de los márgenes etc
+\frenchspacing \addtolength{\hoffset}{-1.5cm}
+\addtolength{\textwidth}{3cm} \addtolength{\voffset}{-2.5cm}
+\addtolength{\textheight}{4cm}
+% --- Para el encabezado
+\setlength{\headheight}{33pt}
+
+\fancyhead[R]{\includegraphics[height=1cm]{logo_fcefyn_nuevo.jpg}}
+\fancyhead[L]{\includegraphics[height=1cm]{unc1_a.jpg}}
+\fancyhead[C]{}
+\fancyfoot[C]{Página \thepage} \renewcommand{\footrulewidth}{0.4pt}
+\pagestyle{fancy}
+% --- Para las tablas
+\usepackage{multirow} % Juntar filas
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}} % Justificar Izq
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}} % Justificar Centrar
+\newcolumntype{R}[1]{>{\raggedleft\arraybackslash}p{#1}} % Justificar Der
+\usepackage[numbered]{bookmark} % Para que figure las secciones en el PDF
+\usepackage{listings} % Para poner código
+\usepackage{enumitem} % Para editar las propiedades de los items
+\lstset{frame=single} % Código en un cuadro
+% --- Para Anexo
+\addto\captionsspanish{%
+  \renewcommand\appendixname{ANEXO}
+  \renewcommand\appendixpagename{ANEXOS}
+}
+% --- Quita los cuadrados de colores en los hipervínculos
+\hypersetup{
+	colorlinks = true,
+	linkcolor  = black,
+	urlcolor   = black,
+  citecolor  = black,
+  filecolor  = black,
+  anchorcolor = black}
+% -------------------------------------------------------- %
+% Definicion de colores para el codigo
+
+\lstdefinelanguage{Ce}{
+  backgroundcolor=\color{white},		%color de fondo
+  commentstyle=\color{CadetBlue},		%color de los comentarios
+  keywordstyle=\color{Plum},			%color de las palabras reservadas
+  numberstyle=\tiny\color{ForestGreen},	%numero de línea con tamaño y color
+  numbers=left,                    	%posicion de los numeros
+  numbersep=5pt,   					%espaciado entre los numeros
+  stringstyle=\color{OliveGreen},		%color de las strings
+  basicstyle=\ttfamily\footnotesize,	%estilo de fuente
+  breakatwhitespace=false,         	%romper estacios en blanco
+  breaklines=true,                 	%romper lineas
+  frame=single,						%para encuadrar el codigo
+  rulecolor=\color{black},			%color del cuadro
+  showspaces=false,
+  showstringspaces=false,
+  showtabs=false,
+  tabsize=2,
+  language=C
+}
+
+\renewcommand{\lstlistingname}{Código}
+
+% -------------------------------------------------------- %
+
+\begin{document}
+
+\begin{titlepage}
+    \begin{center}
+      \vspace*{1cm}
+
+      \vspace{2cm}
+      \includegraphics[width=0.4\textwidth]{unc1_a.jpg}
+      \includegraphics[width=0.4\textwidth]{logo_fcefyn_nuevo.jpg}
+
+      \Huge
+      \textbf{Cátedra de Sistemas Operativos II}
+
+      \vspace{3.5cm}
+
+      \textbf{Trabajo Práctico N\si{\degree} II}
+
+      \vfill
+
+      \vspace{0.8cm}
+
+
+
+      \Large
+      Piñero, Tomás Santiago\\
+      14 de Mayo de 2020
+    \end{center}
+\end{titlepage}
+% -------------------------------------------------------- %
+% --- Tabla de contenidos
+
+\setcounter{secnumdepth}{1}
+\setcounter{tocdepth}{5}
+\tableofcontents
+
+% -------------------------------------------------------- %
+
+\newpage
+\renewcommand{\baselinestretch}{1}
+\setlength{\parskip}{0.5em}
+
+\section{Introducción}
+\label{intro}
+
+\subsection{Objetivo}
+\label{objetivo}
+El objetivo del trabajo es diseñar una solución que utilice el paradigma de
+memoria compartida mediante \emph{OpenMP} para realizar el procesamiento de
+una imagen \emph{BMP}.
+
+
+\subsection{Definiciones, Acrónimos y Abreviaturas}
+\label{daa}
+
+\begin{itemize}
+  \item \emph{API}: \emph{Application Programming Interface}. Es un conjunto
+  de funciones ofrecidas para ser utilizadas por otro software.
+  \item \emph{IPC}: \emph{Inter-Process Communication}. Mecanismo del Sistema
+  Operativo que permite a los procesos comunicarse y sincronizarse entre sí.
+  \item \emph{TCP/IP}: conjunto de protocolos que posibilitan las comunicaciones
+  de Internet.
+\end{itemize}
+
+
+\section{Descripción general}
+\label{desc}
+
+\subsection{Restricciones}
+\label{restrictions}
+A las restricciones dadas (ver \href{run:../Enunciado.pdf}
+{\texttt{Enunciado.pdf}}) se le agregaron las siguientes:
+
+\begin{enumerate}[leftmargin=1.5cm]
+  \item El usuario y contraseña no pueden ser los mismos.
+  \item El comando para descargar la imagen debe tener el
+  siguiente formato:
+
+  \begin{center}
+    \verb|file down `nombre_imagen' `directorio_usb'|
+  \end{center}
+
+  \item Las imágenes para descargar deben estar ubicadas en la
+  carpeta \verb|imgs|.
+\end{enumerate}
+
+
+\subsection{Esquema del proyecto}
+\label{esq}
+
+El proyecto está dividido en las siguientes carpetas:
+
+\begin{itemize}[leftmargin=1.5cm]
+  \item \textbf{bin}: contiene los archivos ejecutables.
+  \item \textbf{inc}: contiene los \emph{headers} utilizados por los
+  códigos fuente:
+
+  \begin{itemize}[leftmargin=1cm, nosep]
+    \item \emph{messages.h}: \emph{header} con los datos para el
+    envío y recepción de mensajes entre los procesos que conforman
+    el servidor.
+    \item \emph{sockets.h}: \emph{header} con los datos y funciones
+    para la utilización de los \emph{sockets}: su creación y su
+    lectura/escritura.
+  \end{itemize}
+
+  \item \textbf{imgs}: contiene las imágenes disponibles para descargar.
+  \item \textbf{res}: contiene la base de datos de los usuarios.
+  \item \textbf{src}: contiene los códigos fuente.
+
+  \begin{itemize}[leftmargin=1cm, nosep]
+    \item \emph{client.c}
+    \item \emph{primary\_server.c}
+    \item \emph{auth\_service.c}
+    \item \emph{files\_service.c}
+    \item \emph{sockets.c}
+  \end{itemize}
+
+\end{itemize}
+
+\subsection{Requisitos futuros}
+\label{futurereq}
+
+\begin{itemize}[leftmargin=1.5cm]
+  \item Utilizar \emph{CMake} para lograr la compilación curzada.
+  \item Hacer uso de la \emph{API} de \emph{MySQL} para la base de datos.
+  \item Exigir una longitud determinada de caracteres para usuario y contraseña.
+  \item Permitir el registro de un nuevo usuario en la base de datos.
+\end{itemize}
+
+% \newpage
+\section{Diseño de solución}
+\label{solucion}
+
+
+
+\subsection{\emph{Makefile}}
+\label{make}
+Las recetas disponibles en el \emph{Makefile} son las siguientes:
+
+\begin{enumerate}
+  \item \emph{all}: genera los ejecutables del sistema.
+  \item \emph{check}: corre \emph{cppcheck} sobre el directorio
+  \verb|src|.
+  \item \emph{doc}: genera la documentación del código en HTML
+  utilizando \emph{doxygen} en la carpeta llamada \verb|Doc| y la
+  abre en el navegador  \emph{Firefox}.\footnote{Si no se encuentra
+  instalado, se sugiere cambiar el navegador en la receta.}
+  \item \emph{client}: crea el directorio \verb|bin| y genera el
+  ejecutable correspondiente al cliente.
+  \item \emph{server}: general los ejecutables correspondientes al
+  servidor.
+  \item \emph{clean}: elimina los directorios \verb|bin| y
+  \verb|Doc|.
+\end{enumerate}
+
+
+\section{Implementación y resultados}
+\label{impres}
+
+\subsection{\emph{Sockets}}
+El método de comunicación de \emph{sockets} es utilizado por tres
+procesos: \emph{client}, \emph{server} y \emph{fileserv}, por lo
+que se decidió realizar un \emph{header} con las funciones que se
+utilizan para la creación de los \emph{sockets} y su lectura/
+escritura.
+
+\newpage
+
+A continuación se muestra brevemente el contenido del \emph{header}.
+
+\begin{lstlisting}[caption={\emph{Header} para el uso de \emph{sockets}.}, label={socket}, language=Ce]
+enum ports        /** Puertos para la conexion de los sockets. */
+{
+  port_ps = 4444, /** Puerto para `primary_server'. */
+  port_fi = 5555  /** Puerto para `files_service'. */
+};
+
+#define STR_LEN 1024  /** Largo de los strings */
+
+/** Escribe en el socket deseado un mensaje. */
+ssize_t send_cmd(int sockfd, void *cmd);
+
+/** Lee el mensaje del socket deseado. */
+ssize_t recv_cmd(int sockfd, void *cmd);
+
+/** Crea el socket en el puerto pedido. */
+int create_svsocket(char *ip, uint16_t port);
+
+/** Conecta al cliente en el puerto del servidor. */
+int create_clsocket(char *ip, uint16_t port);
+\end{lstlisting}
+
+\subsection{Mensajes}
+\label{msg_h}
+Como se explicó en la subsección \ref{ipc}, se utiliza una cola de mensajes
+entre los tres procesos que conforman el servidor, por lo que dichos procesos
+utilizan una librería en común: \emph{messages.h}.
+
+\begin{lstlisting}[caption={\emph{Header} para el uso de la cola de mensajes.}, label={msgql}, language=Ce]
+#define STR_LEN 1024 /**< Largo de los strings */
+
+/* Enum con con los destinos de los mensajes a enviar en la cola de mensajes. */
+enum msg_ID
+{
+  to_auth = 1, /* Destinado a `auth_service'. */
+  to_file = 2, /* Destinado a `files_service'. */
+  to_prim = 3  /* Destinado a `primary_server'. */
+};
+
+/* Enum con los estados posibles del usuario. */
+enum status
+{
+  blocked = 1, /* El usuario esta bloqueado. */
+  active  = 2, /* El usuario esta activo. */
+  invalid = 3, /* Credenciales invalidas. */
+  not_reg = 4  /* Es usuario no existe. */
+};
+
+#define QU_PATH  "./server" /* Archivo para crear la cola de mensajes. */
+\end{lstlisting}
+
+En este \emph{header} también se encuentra incluida la estructura de mensaje
+mostrada en el Código \ref{msg}.
+
+\subsection{Resultados}
+\label{resultados}
+A continuación se muestran los resultados obtenidos al correr el programa con
+los comandos requeridos. Las figuras que muestran el listado de usuarios e
+imágenes disponibles fueron sacadas conectado cliente y servidor a la dirección
+\emph{loopback} (\verb|127.0.0.1|), mientras que la descarga de imágenes son de
+un cliente desde una \emph{Raspberry Pi} con dirección IP \verb|192.168.0.177|.
+
+
+
+\section{Conclusiones}
+\label{conc}
+
+El diseño general del sistema fue claro desde el comienzo. Durante el momento
+de implementación se tuvieron problemas causados tanto por la poca expeciencia
+en el lenguaje C como en el manejo de los errores. La implementación de la cola
+de mensajes y los \emph{sockets} fueron más sencillas de lo esperado.
+
+A pesar de las dificultades, los requerimientos pedidos por la cátedra fueron
+cumplidos.
+
+
+\begin{thebibliography}{9}
+\bibitem{beejs}
+\emph{Beej's Guide to Unix IPC, Message Queues},
+\\\texttt{\href{https://beej.us/guide/bgipc/html/multi/mq.html}{Link to Message Queues}}
+
+
+\bibitem{replace}
+\emph{Codeforwin: Replace text in a line},
+\\\texttt{\href{https://codeforwin.org/2018/02/c-program-replace-specific-line-a-text-file.html}
+{Link to Replace text}}
+
+
+\bibitem{date}
+\emph{Stackoverflow: How to get date and time},
+\\\texttt{\href{https://stackoverflow.com/questions/1442116/how-to-get-the-date-and-time-values-in-a-c-program}
+{Lonk to Date-time}}
+
+\bibitem{seqdiag}
+\emph{Web Sequence Diagram},
+\\\texttt{\href{https://www.websequencediagrams.com/}{Web sequence diagrams}}
+
+\bibitem{filelist}
+\emph{Stackoverflow: How to list files in a directory},
+\\\texttt{\href{https://stackoverflow.com/questions/4204666/how-to-list-files-in-a-directory-in-a-c-program}{Link to list files}}
+
+\bibitem{md5}
+\emph{Stackoverflow: How to calculate MD5},
+\\\texttt{\href{https://stackoverflow.com/questions/10324611/how-to-calculate-the-md5-hash-of-a-large-file-in-c}{Link to calculate MD5}}
+
+\bibitem{md5s}
+\emph{Stackoverflow: How to show MD5 as a string},
+\\\texttt{\href{https://stackoverflow.com/questions/7627723/how-to-create-a-md5-hash-of-a-string-in-c}{Link to MD5 to string}}
+\end{thebibliography}
+\end{document}
