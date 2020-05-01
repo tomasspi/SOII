@@ -7,8 +7,6 @@
  * @author Tomás Santiago Piñero
  */
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -18,13 +16,12 @@
 #include <unistd.h>
 #include <signal.h>
 #include <termios.h>
-#include <openssl/md5.h>
 #include <errno.h>
 
 #include "sockets.h"
+#include "utilities.h"
 
 void ask_login(char buf[STR_LEN]);
-char *get_md5_usb(char path[STR_LEN], size_t size);
 void little_to_big(char little[4], char big[8]);
 void show_mbr(char path[STR_LEN]);
 void show_prompt(int32_t sockfd, ssize_t rw, char buffer[STR_LEN], char ip[STR_LEN]);
@@ -254,7 +251,7 @@ void show_prompt(int32_t sockfd, ssize_t rw, char buffer[STR_LEN], char ip[STR_L
 
           printf("Done writing.\n");
 
-          char *md5 = get_md5_usb(path_usb, size_for_md5);
+          char *md5 = get_md5(path_usb, size_for_md5);
 
           //------ Termina de escribir y realiza la verificación del hash ------
           if(!strcmp(md5_recv, md5))
@@ -328,7 +325,7 @@ void show_mbr(char path_usb[STR_LEN])
     printf("Over/underflow %ld\n", tamanio);
 
   tamanio *= 512;
-  tamanio /=1000000;
+  tamanio /= 1000000;
 
   printf(" - Tamaño de la partición: %ld MB\n\n", tamanio);
 }
@@ -348,44 +345,4 @@ void little_to_big(char big[8], char little[4])
     sprintf(byte, "%02x", little[i] & 0xff);
     strcat(big, byte);
   }
-}
-
-/**
- * @brief
- * Función encargada de calcular el hash MD5 de la imagen escrita en el USB.
- * @param  path Path del USB.
- * @param  size Tamaño de la imagen.
- * @return      Hash MD5 de la imagen.
- */
-char *get_md5_usb(char path[STR_LEN], size_t size)
-{
-  FILE *file = fopen(path, "rb");
-
-  char buf[STR_LEN];
-  size_t bytes, bytes_read;
-
-  //------ MD5 del archivo ------
-  unsigned char c[MD5_DIGEST_LENGTH];
-  MD5_CTX mdContext;
-
-  MD5_Init(&mdContext);
-
-  bytes = 0;
-
-  while(bytes < size)
-  {
-    bytes_read = fread(buf, sizeof(char), sizeof(buf), file);
-    MD5_Update(&mdContext, buf, bytes_read);
-    bytes += bytes_read;
-  }
-
-  MD5_Final(c,&mdContext);
-
-  char *md5 = malloc(MD5_DIGEST_LENGTH * 2 + 1);
-
-  //------ MD5 to string ------
-  for(int i = 0; i < MD5_DIGEST_LENGTH; i++)
-    sprintf(&md5[i*2], "%02x",(unsigned int) c[i]);
-
-  return md5;
 }

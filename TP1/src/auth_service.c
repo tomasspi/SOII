@@ -7,16 +7,14 @@
  * @author Tomás Santiago Piñero
  */
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
 #include <unistd.h>
 #include <stdbool.h>
 #include <time.h>
-#include <sys/msg.h>
 
 #include "messages.h"
+#include "utilities.h"
 
 #define COLUMNAS  5            /**< Cantidad de columnas de la BD. */
 #define BLOCKED_Q "bloqueado"  /**< ¿El usuario está bloqueado? */
@@ -34,6 +32,9 @@ int  write_database(char data[COLUMNAS][STR_LEN], const char t, const char *new)
 void replace(char *str, const char *old, const char *new);
 bool check_database(char input[2][STR_LEN], char database[COLUMNAS][STR_LEN]);
 int  check_credentials(char credentials[2][STR_LEN], char data[COLUMNAS][STR_LEN]);
+char *validate_credentials(char input[2][STR_LEN],
+                           char database[COLUMNAS][STR_LEN],
+                           int tries, int *auth);
 
 char date[20];  /**< Fecha actual. */
 
@@ -45,20 +46,11 @@ int main(void)
   char database[COLUMNAS][STR_LEN]; /**< Almacena los datos obtenidos de la BD. */
 
   struct msg buf;
-  int msqid;
-  key_t key;
+  int err;
 
-  if ((key = ftok(QU_PATH, 5)) == -1)
-    {
-      perror("ftok");
-      exit(EXIT_FAILURE);
-    }
-
-  if ((msqid = msgget(key, 0666)) == -1)
-    {
-      perror("msgget");
-      exit(EXIT_FAILURE);
-    }
+  err = get_queue();
+  check_error(err);
+  int msqid = err;
 
   int tries = 3;
   int auth = 0;
@@ -74,37 +66,9 @@ int main(void)
           {
             login(buf.msg, input);
 
-            if(check_database(input, database))
-              {
-                switch(check_credentials(input, database))
-                  {
-                    case blocked:
-                      strcpy(buf.msg, "El usuario está bloqueado.\n");
-                      break;
+            char *result = validate_credentials(input, database, tries, &auth);
 
-                    case active:
-                      strcpy(buf.msg, database[COLUMNAS-1]);
-                      get_date(date);
-
-                      if(write_database(database, FECHA, date) != 1)
-                        perror("write_database");
-
-                      auth = 1;
-                      break;
-
-                    case invalid:
-                      strcpy(buf.msg, "Credenciales inválidas.\n");
-                      tries--;
-
-                      if(tries == 0)
-                        {
-                          strcpy(buf.msg, "El usuario ha sido bloqueado.\n");
-                          if(write_database(database, STATUS, BLOCKED_Q) != 1)
-                            perror("write_database");
-                        }
-                      break;
-                  }
-              } else strcpy(buf.msg,"El usuario no existe.\n");
+            strcpy(buf.msg,result);
 
             buf.mtype = to_prim;
             msgsnd(msqid, &buf, sizeof(buf.msg), 0);
@@ -153,6 +117,48 @@ int main(void)
   return EXIT_SUCCESS;
 }
 
+char *validate_credentials(char input[2][STR_LEN],
+                           char database[COLUMNAS][STR_LEN],
+                           int tries, int *auth)
+{
+  char *result = malloc(STR_LEN);
+
+  if(check_database(input, database))
+    {
+      switch(check_credentials(input, database))
+        {
+          case blocked:
+            strcpy(result, "El usuario está bloqueado.\n");
+            break;
+
+          case active:
+            strcpy(result, database[COLUMNAS-1]);
+            get_date(date);
+
+            if(write_database(database, FECHA, date) != 1)
+              perror("write_database");
+
+            *auth = 1;
+            break;
+
+          case invalid:
+            strcpy(result, "Credenciales inválidas.\n");
+            tries--;
+
+            if(tries == 0)
+              {
+                strcpy(result, "El usuario ha sido bloqueado.\n");
+                if(write_database(database, STATUS, BLOCKED_Q) != 1)
+                  perror("write_database");
+              }
+            break;
+        }
+    }
+  else strcpy(result,"El usuario no existe.\n");
+
+  return result;
+}
+
 /**
  * @brief
  * Función encargada de tomar las credenciales (usuario y contraseña) para el
@@ -191,8 +197,10 @@ bool check_database(char input[2][STR_LEN], char database[COLUMNAS][STR_LEN])
   FILE *archivo = fopen(DB_PATH, "r");
 
   if(archivo == NULL)
+  {
     perror("Archivo DB");
-
+    return false;
+  }  
 
   while(fgets(string, LINE_LEN, archivo) != NULL)
     {
@@ -375,15 +383,15 @@ void replace(char *str, const char *old, const char *new)
 
   while((pos = strstr(str,old)) != NULL)
     {
-      strcpy(temp,str); //backup de la línea
+      strcpy(temp,str);
 
-      indice = pos - str; //posicion en la que se encontró la palabra
+      indice = pos - str;
 
-      str[indice] = '\0'; //termina la línea en esa posición
+      str[indice] = '\0';
 
-      strcat(str,new); //concatena con el contendio nuevo
+      strcat(str,new);
 
-      strcat(str, temp+indice+len); //concatena con el resto
+      strcat(str, temp+indice+len);
     }
 }
 
@@ -411,7 +419,7 @@ void get_date(char date[20])
   min = local->tm_min;
   seg = local->tm_sec;
 
-  dd   = local->tm_mday;        	// get day of month (1 to 31)
+  dd   = local->tm_mday;        // get day of month (1 to 31)
   mm   = local->tm_mon + 1;   	// get month of year (0 to 11)
   yyyy = local->tm_year + 1900;	// get year since 1900
 

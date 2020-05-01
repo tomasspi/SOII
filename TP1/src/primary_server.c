@@ -8,30 +8,32 @@
  * @author Tomás Santiago Piñero
  */
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
 #include <arpa/inet.h>
 #include <sys/ipc.h>
-#include <sys/msg.h>
 #include <unistd.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
 
 #include "messages.h"
 #include "sockets.h"
+#include "utilities.h"
 
 #define LS   "ls" /**< El comando 'ls'. */
 
-int newfd;
 struct msg buf;
 int msqid;
+int newfd;
 
 void cmd_invalid(int newfd, char buf[STR_LEN]);
+int create_child(int child_id, int child_state, char *args[]);
+int create_queue();
+void loop_listen(int sockfd, ssize_t rw, char msg_buf[STR_LEN], char *argv[]);
 void print_ls(char cmd[1], char buff[STR_LEN], int newfd, int msqid,
               struct msg buf);
 void send_client(ssize_t rw, int newfd, struct msg *buf);
+int start_listening(int sockfd, char *argv[]);
 
 /**
  * @brief
@@ -53,176 +55,222 @@ int main(int argc, char *argv[])
       exit(EXIT_FAILURE);
     }
 
-  int sockfd;
-  ssize_t rw;
-  char msg_buf[STR_LEN];
+  int err = create_queue();
+  check_error(err);
 
-  key_t key;
-
-  if ((key = ftok(QU_PATH, 5)) == -1)
-    {
-      perror("ftok");
-      exit(EXIT_FAILURE);
-    }
-
-  if ((msqid = msgget(key, 0666 | IPC_CREAT)) == -1)
-    {
-      perror("msgget");
-      exit(EXIT_FAILURE);
-    }
-
-  int auth_id, files_id, auth_state, files_state;
-
-  if((auth_id = fork()) == -1) //------ Auth de hijo ------
-    {
-      perror("fork auth");
-      exit(EXIT_FAILURE);
-    }
+  int auth_id     = -1;
+  int files_id    = -1;
+  int auth_state  = -1;
+  int files_state = -1;
 
   char *arga[] = {"./auth", NULL};
   char *argf[] = {"./fileserv", argv[1], NULL};
 
-  if(auth_id == 0)
-    execv(arga[0], arga);
-  else
+  err = create_child(auth_id, auth_state, arga);
+  check_error(err);
+
+  err = create_child(files_id, files_state, argf);
+  check_error(err);
+
+  int sockfd = -1;
+
+  err = start_listening(sockfd, argv);
+  check_error(err);
+
+  ssize_t rw = 0;
+  char msg_buf[STR_LEN];
+
+  loop_listen(sockfd, rw, msg_buf, argv);
+
+  return EXIT_SUCCESS;
+}
+
+void loop_listen(int sockfd, ssize_t rw, char msg_buf[STR_LEN], char *argv[])
+{
+  int err;
+  while(1)
     {
-      if((files_id =  fork()) == -1) //------ Fileserv de hijo ------
+      rw = recv_cmd(newfd,msg_buf);
+      check_error((int) rw);
+
+      if(!strcmp(msg_buf,"exit"))
         {
-          perror("fork files");
-          exit(EXIT_FAILURE);
+          err = start_listening(sockfd, argv);
+          check_error(err);
+
+          rw = recv_cmd(newfd,msg_buf);
+          check_error((int) rw);
         }
 
-      if(files_id == 0)
-        execv(argf[0], argf);
-      else
+      //------ Identificación y envío de mensaje ------
+      if(strchr(msg_buf,',') != NULL) //------ Inicio de sesión ------
         {
-          waitpid(auth_id, &auth_state, WNOHANG);
-          waitpid(files_id, &files_state, WNOHANG);
+          buf.mtype = to_auth;
+          strcpy(buf.msg, msg_buf);
 
-          socket:
-          sockfd = create_svsocket(argv[1], port_ps);
+          msgsnd(msqid, &buf, sizeof(buf.msg), 0);
 
-          struct sockaddr_in cl_addr;
-          uint cl_len;
-          char cl_ip[STR_LEN];
+          msgrcv(msqid, &buf, sizeof(buf.msg), to_prim, 0);
+          send_client(rw, newfd, &buf);
+        }
+      else //------ Es un comando ------
+        {
+          int i = 0;
+          char *comando[5], backup[STR_LEN];
+          strcpy(backup, msg_buf);
 
-          printf("Esuchando en puerto %d...\n", port_ps);
+          for(int i = 0; i < 5; i++)
+            comando[i] = "";
 
-          listen(sockfd, 1);
-          cl_len = sizeof(cl_addr);
-
-          newfd = accept(sockfd, (struct sockaddr *) &cl_addr, &cl_len);
-
-          if(newfd == -1)
+          char *tmp = strtok(backup, " ");
+          while(tmp != NULL)
             {
-              perror("accept");
-              exit(EXIT_FAILURE);
+              comando[i] = tmp;
+              i++;
+              tmp = strtok(NULL," ");
             }
 
-          inet_ntop(AF_INET, &(cl_addr.sin_addr), cl_ip, INET_ADDRSTRLEN);
-          printf("Conexión aceptada a %s\n", cl_ip);
-
-          close(sockfd);
-
-    listen:
-          while(1)
+          if(comando[1] == NULL)
             {
-              //------ Lectura ------
-              rw = recv_cmd(newfd,msg_buf);
+              cmd_invalid(newfd, msg_buf);
+            }
 
-              if(rw == -1)
+          if(!strcmp(comando[0], "user"))
+            {
+              buf.mtype = to_auth;
+              if(!strcmp(comando[1],LS))
+                print_ls(comando[1], msg_buf, newfd, msqid, buf);
+
+              else if(!strcmp(comando[1],"passwd"))
                 {
-                  perror("read");
-                  goto listen;
-                }
-              //------ Fin Lectura ------
+                  if(!strcmp(comando[2],""))
+                    cmd_invalid(newfd, msg_buf);
 
-              if(!strcmp(msg_buf,"exit"))
-                goto socket;
-
-              //------ Identificación y envío de mensaje ------
-              if(strchr(msg_buf,',') != NULL) //------ Inicio de sesión ------
-                {
-                  buf.mtype = to_auth;
-                  strcpy(buf.msg, msg_buf);
+                  strcpy(buf.msg, comando[2]);
 
                   msgsnd(msqid, &buf, sizeof(buf.msg), 0);
 
                   msgrcv(msqid, &buf, sizeof(buf.msg), to_prim, 0);
                   send_client(rw, newfd, &buf);
                 }
-              else //------ Es un comando ------
-                {
-                  int i = 0;
-                  char *comando[5], backup[STR_LEN];
-                  strcpy(backup, msg_buf);
-
-                  for(int i = 0; i < 5; i++)
-                    comando[i] = "";
-
-                  char *tmp = strtok(backup, " ");
-                  while(tmp != NULL)
-                    {
-                      comando[i] = tmp;
-                      i++;
-                      tmp = strtok(NULL," ");
-                    }
-
-                  if(comando[1] == NULL)
-                    {
-                      cmd_invalid(newfd, msg_buf);
-                      goto listen;
-                    }
-
-                  if(!strcmp(comando[0], "user"))
-                    {
-                      buf.mtype = to_auth;
-                      if(!strcmp(comando[1],LS))
-                        print_ls(comando[1], msg_buf, newfd, msqid, buf);
-
-                      else if(!strcmp(comando[1],"passwd"))
-                        {
-                          if(!strcmp(comando[2],""))
-                            goto invalid;
-
-                          strcpy(buf.msg, comando[2]);
-
-                          msgsnd(msqid, &buf, sizeof(buf.msg), 0);
-
-                          msgrcv(msqid, &buf, sizeof(buf.msg), to_prim, 0);
-                          send_client(rw, newfd, &buf);
-                        }
-                      else goto invalid;
-                    }
-                  else if(!strcmp(comando[0], "file"))
-                    {
-                      buf.mtype = to_file;
-                      if(!strcmp(comando[1],LS))
-                        print_ls(comando[1], msg_buf, newfd, msqid, buf);
-
-                      else if(!strcmp(comando[1],"down"))
-                        {
-                          if(!strcmp(comando[2],"") || !strcmp(comando[3],""))
-                            goto invalid;
-
-                          sprintf(buf.msg, "%s %s", comando[2], comando[3]);
-
-                          msgsnd(msqid, &buf, sizeof(buf.msg), 0);
-
-                          msgrcv(msqid, &buf, sizeof(buf.msg), to_prim, 0);
-                          send_client(rw, newfd, &buf);
-                        }
-                      else goto invalid;
-                    }
-                  else
-invalid:           cmd_invalid(newfd, msg_buf);
-                }
-              //------ Fin de identificación y envío de mensaje ------
+              else cmd_invalid(newfd, msg_buf);
             }
+          else if(!strcmp(comando[0], "file"))
+            {
+              buf.mtype = to_file;
+              if(!strcmp(comando[1],LS))
+                print_ls(comando[1], msg_buf, newfd, msqid, buf);
+
+              else if(!strcmp(comando[1],"down"))
+                {
+                  if(!strcmp(comando[2],"") || !strcmp(comando[3],""))
+                    cmd_invalid(newfd, msg_buf);
+
+                  sprintf(buf.msg, "%s %s", comando[2], comando[3]);
+
+                  msgsnd(msqid, &buf, sizeof(buf.msg), 0);
+
+                  msgrcv(msqid, &buf, sizeof(buf.msg), to_prim, 0);
+                  send_client(rw, newfd, &buf);
+                }
+              else cmd_invalid(newfd, msg_buf);
+            }
+          else cmd_invalid(newfd, msg_buf);
         }
+        //------ Fin de identificación y envío de mensaje ------
+      }
+}
+
+/**
+ * @brief
+ * Función encargada de crear la cola de mensajes.
+ * @return msqid ID de la cola de mensajes.
+ */
+int create_queue()
+{
+  key_t key;
+
+  if ((key = ftok(QU_PATH, 5)) == -1)
+    {
+      perror("ftok");
+      return -1;
     }
 
-  return EXIT_SUCCESS;
+  msqid = msgget(key, 0666 | IPC_CREAT);
+
+  if (msqid == -1)
+    {
+      perror("msgget");
+      return -1;
+    }
+
+  return msqid;
+}
+
+/**
+ * @brief
+ * Función encargada de crear un proceso hijo.
+ *
+ * @param  child_id    ID del proceso hijo.
+ * @param  child_state Estado del proceso hijo.
+ * @param  args        Argumentos que recibe el proceso hijo.
+ * @return             Fork exitoso (1) o fallido (-1)
+ */
+int create_child(int child_id, int child_state, char *args[])
+{
+  child_id = fork();
+
+  if(child_id == -1)
+    {
+      perror("fork");
+      return -1;
+    }
+
+  if(child_id == 0)
+    execv(args[0], args);
+  else
+  {
+    waitpid(child_id, &child_state, WNOHANG);
+    return 1;
+  }
+  return 0;
+}
+
+/**
+ * @brief
+ * Función encargada de crear el socket y escuchar por posibles conexiones
+ * al mismo.
+ *
+ * @param  sockfd File descriptor del socket.
+ * @param  argv   Argumentos con la dirección IP.
+ * @return        File descriptor cliente-servidor.
+ */
+int start_listening(int sockfd, char *argv[])
+{
+  sockfd = create_svsocket(argv[1], port_ps);
+
+  struct sockaddr_in cl_addr;
+  uint cl_len;
+  char cl_ip[STR_LEN];
+
+  printf("Esuchando en puerto %d...\n", port_ps);
+
+  listen(sockfd, 1);
+  cl_len = sizeof(cl_addr);
+
+  newfd = accept(sockfd, (struct sockaddr *) &cl_addr, &cl_len);
+
+  if(newfd == -1)
+    {
+      perror("accept");
+      return -1;
+    }
+
+  inet_ntop(AF_INET, &(cl_addr.sin_addr), cl_ip, INET_ADDRSTRLEN);
+  printf("Conexión aceptada a %s\n", cl_ip);
+
+  close(sockfd);
+  return newfd;
 }
 
 /**
@@ -250,7 +298,7 @@ void send_client(ssize_t rw, int newfd, struct msg *buf)
  * @param newfd File descriptor perteneciente al socket.
  * @param buf   Mensaje a enviar.
  */
-void cmd_invalid(int newfd, char buf[STR_LEN])
+inline void cmd_invalid(int newfd, char buf[STR_LEN])
 {
   sprintf(buf,"Comando inválido. "
           "Los comandos soportados son:\n - %s\n - %s\n - %s\n - %s\n",

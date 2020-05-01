@@ -5,8 +5,8 @@
  *
  * @author Tomás Santiago Piñero
  */
-
-#define STR_LEN 1024 /**< Largo de los strings */
+#define STR_LEN  1024       /**< Largo de los strings */
+#define QU_PATH  "./server" /**< Archivo para crear la cola de mensajes. */
 
 /**
  * @brief
@@ -30,9 +30,6 @@ enum status
   invalid = 3, /**< Credenciales inválidas. */
   not_reg = 4  /**< Es usuario no existe. */
 };
-
-#define QU_PATH  "./server" /**< Archivo para crear la cola de mensajes. */
-
 
 struct msg            /** Estructura para mensajes generales. */
 {

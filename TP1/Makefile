@@ -19,7 +19,7 @@ CFLAGS = -std=gnu11 -pedantic $(WARN) -I$(IDIR) -O1
 all: client server
 
 check:
-	cppcheck $(SDIR)
+	cppcheck $(SDIR) --enable=all
 
 doc:
 	mkdir $(DDIR)
@@ -27,13 +27,13 @@ doc:
 	firefox Doc/html/index.html
 
 client:
-	mkdir $(ODIR)
-	$(CC) $(CFLAGS) $(SDIR)/sockets.c $(SDIR)/client.c -o $(ODIR)/$(CL) $(MD5)
+	mkdir -p $(ODIR)
+	$(CC) $(CFLAGS) $(SDIR)/sockets.c $(SDIR)/utilities.c $(MD5) $(SDIR)/client.c -o $(ODIR)/$(CL)
 
 server:
-	$(CC) $(CFLAGS) $(SDIR)/sockets.c $(SDIR)/primary_server.c -o $(ODIR)/$(SV)
-	$(CC) $(CFLAGS) $(SDIR)/sockets.c $(SDIR)/auth_service.c -o $(ODIR)/$(AU)
-	$(CC) $(CFLAGS) $(SDIR)/sockets.c $(SDIR)/files_service.c -o $(ODIR)/$(FI) $(MD5)
+	$(CC) $(CFLAGS) $(SDIR)/sockets.c $(SDIR)/utilities.c $(MD5) $(SDIR)/primary_server.c -o $(ODIR)/$(SV)
+	$(CC) $(CFLAGS) $(SDIR)/sockets.c $(SDIR)/utilities.c $(MD5) $(SDIR)/auth_service.c -o $(ODIR)/$(AU)
+	$(CC) $(CFLAGS) $(SDIR)/sockets.c $(SDIR)/utilities.c $(MD5) $(SDIR)/files_service.c -o $(ODIR)/$(FI) 
 
 .PHONY: clean
 

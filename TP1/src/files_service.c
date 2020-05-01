@@ -8,28 +8,24 @@
  * @author Tomás Santiago Piñero
  */
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
 #include <unistd.h>
-#include <sys/msg.h>
 #include <sys/socket.h>
 #include <sys/sendfile.h>
 #include <sys/stat.h>
 #include <netinet/in.h>
 #include <dirent.h>
-#include <openssl/md5.h>
 #include <fcntl.h>
 
 #include "messages.h"
 #include "sockets.h"
+#include "utilities.h"
 
 #define IMGS_PATH "../imgs"
 
 void print_images(int msqid, struct msg buf);
 int get_images();
-char *get_md5(char *path);
 
 int main(int argc, char *argv[])
 {
@@ -112,7 +108,7 @@ int main(int argc, char *argv[])
         char size_s[STR_LEN] = "";
         sprintf(size_s, "%ld", size);
 
-        char *md5s = get_md5(img);
+        char *md5s = get_md5(img, 0);
 
         sprintf(buf.msg, "Download %s %s %s", size_s, usb, md5s);
 
@@ -215,7 +211,7 @@ void print_images(int msqid, struct msg buf)
       size /= 1000000;
       fclose(file);
 
-      char *md5 = get_md5(path);
+      char *md5 = get_md5(path, 0);
 
       sprintf(buf.msg, "%-35s %-14ld %-15s\n", direct->d_name, size, md5);
       strcat(msg, buf.msg);
@@ -227,36 +223,4 @@ void print_images(int msqid, struct msg buf)
 
   memset(msg, '\0', STR_LEN-1);
   memset(buf.msg, '\0', sizeof(buf.msg));
-}
-
-/**
- * @brief
- * Función encargada de calcular el hash MD5 del archivo.
- * @param  path Path del archivo.
- * @return      Hash MD5 del archivo.
- */
-char *get_md5(char *path)
-{
-  FILE *file = fopen(path, "rb");
-  char buf[STR_LEN];
-  size_t bytes;
-
-  //------ MD5 del archivo ------
-  unsigned char c[MD5_DIGEST_LENGTH];
-  MD5_CTX mdContext;
-
-  MD5_Init(&mdContext);
-
-  while ((bytes = fread(buf, sizeof(char), sizeof(buf), file)) != 0)
-    MD5_Update(&mdContext, buf, bytes);
-
-  MD5_Final(c,&mdContext);
-
-  char *md5= malloc(MD5_DIGEST_LENGTH * 2 + 1);
-
-  //------ MD5 to string ------
-  for(int i = 0; i < MD5_DIGEST_LENGTH; i++)
-    sprintf(&md5[i*2], "%02x",(unsigned int) c[i]);
-
-  return md5;
 }
