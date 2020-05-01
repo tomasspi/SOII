@@ -8,7 +8,6 @@
  * @author Tomás Santiago Piñero
  */
 
-#include <string.h>
 #include <sys/types.h>
 #include <arpa/inet.h>
 #include <sys/ipc.h>
@@ -34,7 +33,7 @@ void print_ls(char cmd[1], char buff[STR_LEN], int newfd, int msqid,
               struct msg buf);
 void send_client(ssize_t rw, int newfd, struct msg *buf);
 int start_listening(int sockfd, char *argv[]);
-
+void send_message(long destino, struct msg buf, char msg_buf[STR_LEN]);
 /**
  * @brief
  * En caso de que ocurra algún error, se elimina la cola de mensajes.
@@ -103,13 +102,9 @@ void loop_listen(int sockfd, ssize_t rw, char msg_buf[STR_LEN], char *argv[])
         }
 
       //------ Identificación y envío de mensaje ------
-      if(strchr(msg_buf,',') != NULL) //------ Inicio de sesión ------
+      if(is_login(msg_buf)) //------ Inicio de sesión ------
         {
-          buf.mtype = to_auth;
-          strcpy(buf.msg, msg_buf);
-
-          msgsnd(msqid, &buf, sizeof(buf.msg), 0);
-
+          send_message(to_auth, buf, msg_buf);
           msgrcv(msqid, &buf, sizeof(buf.msg), to_prim, 0);
           send_client(rw, newfd, &buf);
         }
@@ -179,6 +174,14 @@ void loop_listen(int sockfd, ssize_t rw, char msg_buf[STR_LEN], char *argv[])
         }
         //------ Fin de identificación y envío de mensaje ------
       }
+}
+
+void send_message(long destino, struct msg buf, char msg_buf[STR_LEN])
+{
+  buf.mtype = destino;
+  strcpy(buf.msg, msg_buf);
+
+  msgsnd(msqid, &buf, sizeof(buf.msg), 0);
 }
 
 /**

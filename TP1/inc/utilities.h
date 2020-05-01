@@ -1,6 +1,8 @@
 #include <sys/msg.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdbool.h>
+#include <string.h>
 
 #define MAX  256       /**< Largo del path */
 /**
@@ -28,3 +30,5 @@ int get_queue();
  * @return      Hash MD5 del archivo.
  */
 char *get_md5(char path[MAX], size_t size);
+
+bool is_login(char msg[MAX]);

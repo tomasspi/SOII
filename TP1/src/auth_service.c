@@ -7,10 +7,8 @@
  * @author Tomás Santiago Piñero
  */
 
-#include <string.h>
 #include <stdint.h>
 #include <unistd.h>
-#include <stdbool.h>
 #include <time.h>
 
 #include "messages.h"
@@ -200,7 +198,7 @@ bool check_database(char input[2][STR_LEN], char database[COLUMNAS][STR_LEN])
   {
     perror("Archivo DB");
     return false;
-  }  
+  }
 
   while(fgets(string, LINE_LEN, archivo) != NULL)
     {

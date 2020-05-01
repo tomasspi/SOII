@@ -86,3 +86,16 @@ char *get_md5(char path[STR_LEN], size_t size)
 
   return md5;
 }
+
+/**
+ * @brief
+ * Indica si el mensaje enviado son credenciales de login o un comando.
+ * @param  msg Mensaje recibido.
+ * @return     Si son credenciales o no.
+ */
+bool is_login(char msg[MAX])
+{
+  if(strstr(msg,",") != NULL)
+    return true;
+  else return false;
+}
