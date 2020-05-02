@@ -2,6 +2,7 @@
 
 #include "utilities.h"
 #include "messages.h"
+
 /**
  * @brief
  * Función encargada de checkear el valor de operaciones que devuelvan -1 cuando
@@ -12,7 +13,10 @@
 inline void check_error(int err)
 {
   if(err == -1)
+  {
+    perror("error");
     exit(EXIT_FAILURE);
+  }
 }
 
 /**

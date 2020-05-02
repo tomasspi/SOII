@@ -2,7 +2,7 @@
  * @file sockets.c
  * @brief
  * Header con las utilizades para la utilización de los sockets.
- * 
+ *
  * @author Tomás Santiago Piñero
  */
 
@@ -11,13 +11,10 @@
 #include <sys/un.h>
 #include <arpa/inet.h>
 #include <netdb.h>
-#include <signal.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <stdio.h>
 
 #include "sockets.h"
 #include "messages.h"
+#include "utilities.h"
 
 /**
  * @brief

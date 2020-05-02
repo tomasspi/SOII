@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
+#include <unistd.h>
 
 #define MAX  256       /**< Largo del path */
 /**
@@ -31,4 +32,10 @@ int get_queue();
  */
 char *get_md5(char path[MAX], size_t size);
 
+/**
+ * @brief
+ * Indica si el mensaje enviado son credenciales de login o un comando.
+ * @param  msg Mensaje recibido.
+ * @return     Si son credenciales o no.
+ */
 bool is_login(char msg[MAX]);

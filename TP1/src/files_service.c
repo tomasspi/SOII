@@ -8,12 +8,10 @@
  * @author Tomás Santiago Piñero
  */
 
-#include <stdint.h>
-#include <unistd.h>
 #include <sys/socket.h>
 #include <sys/sendfile.h>
 #include <sys/stat.h>
-#include <netinet/in.h>
+#include <arpa/inet.h>
 #include <dirent.h>
 #include <fcntl.h>
 
@@ -24,7 +22,12 @@
 #define IMGS_PATH "../imgs"
 
 void print_images(int msqid, struct msg buf);
-int get_images();
+
+void send_image(char img[STR_LEN], long *size, int newfd);
+
+void send_img_data(char img[STR_LEN], long *size, struct msg buf, int msqid);
+
+int start_listening(int sockfd, char *ip);
 
 int main(int argc, char *argv[])
 {
@@ -37,29 +40,15 @@ int main(int argc, char *argv[])
   printf("Files service started.\n");
 
   struct msg buf;
-  int msqid;
-  key_t key;
+  int err;
 
-  if ((key = ftok(QU_PATH, 5)) == -1)
-    {
-      perror("ftok");
-      exit(EXIT_FAILURE);
-    }
-
-  if ((msqid = msgget(key, 0666)) == -1)
-    {
-      perror("msgget");
-      exit(EXIT_FAILURE);
-    }
-
-  buf.mtype = to_prim;
+  err = get_queue();
+  check_error(err);
+  int msqid = err;
 
   while (1)
   {
     msgrcv(msqid, &buf, sizeof(buf.msg), to_file, 0);
-
-    if(!strcmp(buf.msg, "exit"))
-      exit(EXIT_SUCCESS);
 
     if(!strcmp(buf.msg,"ls"))
       {
@@ -68,100 +57,127 @@ int main(int argc, char *argv[])
       }
     else
       {
-        buf.mtype = to_prim;
         char img[STR_LEN];
-
-        char *tok = strtok(buf.msg, " ");
-
-        strcpy(img, IMGS_PATH);
-        strcat(img, "/");
-        strcat(img, tok);
-
-        tok = strtok(NULL, " ");
-        char usb[STR_LEN];
-        strcpy(usb,tok);
-
-  //------ Crea el nuevo socket ------
-        int fifd  = create_svsocket(argv[1], port_fi);
-        int newfd;
-
-        if(fifd == -1)
-          {
-            perror("Files socket");
-            exit(EXIT_FAILURE);
-          }
-  //------ Fin creación socket ------
-        FILE *imgn;
         long size;
+        send_img_data(img, &size, buf, msqid);
 
-        imgn = fopen(img, "r");
+        int fifd = -1;
+        err = start_listening(fifd, argv[1]);
+        check_error(err);
+        fifd = err;
 
-        if(imgn == NULL)
-          perror("file");
-
-        //------ Tamaño del archivo ------
-        fseek(imgn, 0, SEEK_END);
-        size = ftell(imgn);
-        fclose(imgn);
-
-        char size_s[STR_LEN] = "";
-        sprintf(size_s, "%ld", size);
-
-        char *md5s = get_md5(img, 0);
-
-        sprintf(buf.msg, "Download %s %s %s", size_s, usb, md5s);
-
-        msgsnd(msqid, &buf, sizeof(buf.msg), 0);
-
-  //------ Espera conexión de cliente ------
-        struct sockaddr_in cl_addr;
-        uint cl_len;
-
-        printf("  FS: Esuchando en puerto %d...\n", port_fi);
-
-        listen(fifd, 1);
-        cl_len = sizeof(cl_addr);
-
-        newfd = accept(fifd, (struct sockaddr *) &cl_addr, &cl_len);
-
-        if(newfd == -1)
-          {
-            perror("accept");
-            exit(EXIT_FAILURE);
-          }
-
-        printf("  FS: Conexión aceptada.\n");
-        close(fifd);
-  //------ Cliente conectado ------
-        int32_t imgfd;
-
-        imgfd = open(img, O_RDONLY);
-
-        if(imgfd == -1)
-          {
-            perror("open image");
-            exit(EXIT_FAILURE);
-          }
-
-        printf("%s\n", "  FS: Sending file...");
-
-        size_t to_send = (size_t) size;
-        ssize_t sent;
-        off_t offset = 0;
-
-        while(((sent = sendfile(newfd, imgfd, &offset, to_send)) > 0)
-              && (to_send > 0))
-        {
-          to_send -= (size_t) sent;
-        }
-
-        printf("  FS: %lu %s\n", size, "sent.");
-
-        close(imgfd);
+        send_image(img, &size, fifd);
       }
   }
 
   return EXIT_SUCCESS;
+}
+
+/**
+ * @brief
+ * Función encargada de crear el socket y conectarse al cliente.
+ *
+ * @param  sockfd File descriptor del socket.
+ * @param  ip     Dirección IP del servidor.
+ * @return        File descriptor cliente-servidor.
+ */
+int start_listening(int sockfd, char *ip)
+{
+  sockfd = create_svsocket(ip, port_fi);
+
+  struct sockaddr_in cl_addr;
+  uint cl_len;
+  char cl_ip[STR_LEN];
+
+  printf("Esuchando en puerto %d...\n", port_fi);
+
+  listen(sockfd, 1);
+  cl_len = sizeof(cl_addr);
+
+  int newfd;
+  newfd = accept(sockfd, (struct sockaddr *) &cl_addr, &cl_len);
+  check_error(newfd);
+
+  inet_ntop(AF_INET, &(cl_addr.sin_addr), cl_ip, INET_ADDRSTRLEN);
+  printf("Conexión aceptada a %s\n", cl_ip);
+
+  close(sockfd);
+  return newfd;
+}
+
+/**
+ * @brief
+ * Función encargada de realizar el envío de la imagen al cliente.
+ *
+ * @param img   Imagen pedida por el cliente.
+ * @param size  Tamaño de la imagen seleccionada.
+ * @param newfd File descriptor de la conexión.
+ */
+void send_image(char img[STR_LEN], long *size, int newfd)
+{
+  int32_t imgfd;
+
+  imgfd = open(img, O_RDONLY);
+  check_error(imgfd);
+
+  printf("%s\n", "  FS: Sending file...");
+
+  size_t to_send = (size_t) size;
+  ssize_t sent;
+  off_t offset = 0;
+
+  while(((sent = sendfile(newfd, imgfd, &offset, to_send)) > 0)
+        && (to_send > 0))
+  {
+    to_send -= (size_t) sent;
+  }
+
+  printf("  FS: %lu %s\n", *size, "sent.");
+
+  close(imgfd);
+}
+
+/**
+ * @brief
+ * Envía al cliente los datos de la imagen seleccionada.
+ *
+ * @param img   Imagen seleccionada
+ * @param size  Tamaño de la imagen.
+ * @param buf   Mensaje para 'primary_server'.
+ * @param msqid ID de la cola de mensajes.
+ */
+void send_img_data(char img[STR_LEN], long *size, struct msg buf, int msqid)
+{
+  buf.mtype = to_prim;
+
+  char *tok = strtok(buf.msg, " ");
+
+  strcpy(img, IMGS_PATH); /* Nombre de la imagen */
+  strcat(img, "/");
+  strcat(img, tok);
+
+  tok = strtok(NULL, " "); /* Dispositivo a escribir */
+  char usb[STR_LEN];
+  strcpy(usb,tok);
+
+  FILE *imgn;
+  imgn = fopen(img, "r");
+
+  if(imgn == NULL)
+    perror("file");
+
+  fseek(imgn, 0, SEEK_END); /* Calcula el tamaño de la imagen */
+  *size = ftell(imgn);
+  fclose(imgn);
+
+  char size_s[STR_LEN] = "";
+  sprintf(size_s, "%ld", *size);
+
+  char *md5s = get_md5(img, 0);
+
+  sprintf(buf.msg, "Download %s %s %s", size_s, usb, md5s);
+
+  msgsnd(msqid, &buf, sizeof(buf.msg), 0);
 }
 
 /**

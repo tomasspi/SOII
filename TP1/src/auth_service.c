@@ -23,7 +23,7 @@
 #define STATUS    'S'          /**< Utilizado para cambiar el estado en BD. */
 #define LINE_LEN  80           /**< Largo de la linea a leer. */
 
-void check_cmd(struct msg buf, int *msqid, char db[COLUMNAS][STR_LEN], int *auth);
+void check_cmd(struct msg buf, int *msqid, char db[COLUMNAS][STR_LEN]);
 
 int  check_credentials(char credentials[2][STR_LEN], char data[COLUMNAS][STR_LEN]);
 
@@ -75,7 +75,7 @@ int main(void)
             char *result = validate_credentials(input, database, &auth);
 
             strcpy(buf.msg,result);
-            
+
             buf.mtype = to_prim;
             msgsnd(msqid, &buf, sizeof(buf.msg), 0);
 
@@ -84,7 +84,7 @@ int main(void)
           }
         while(!auth);
       }
-      else check_cmd(buf, &msqid, database, &auth);
+      else check_cmd(buf, &msqid, database);
     }
 
   return EXIT_SUCCESS;
@@ -99,15 +99,9 @@ int main(void)
  * @param db     Datos obtenidos de la base de datos.
  * @param auth   Flag de autorización.
  */
-void check_cmd(struct msg buf, int *msqid, char db[COLUMNAS][STR_LEN], int *auth)
+void check_cmd(struct msg buf, int *msqid, char db[COLUMNAS][STR_LEN])
 {
   int err;
-
-  if(!strcmp(buf.msg, "exit"))
-    {
-      *auth = 0;
-      return;
-    }
 
   if(!strcmp(buf.msg,"ls"))
     {
@@ -361,10 +355,7 @@ int write_database(char data[COLUMNAS][STR_LEN], const char t, const char *new)
   reemplazo = fopen(TMP_PATH, "w");
 
   if(archivo == NULL || reemplazo == NULL)
-  {
-    perror("write_database");
     return -1;
-  }
 
   while(fgets(string, LINE_LEN, archivo) != NULL)
     {

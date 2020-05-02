@@ -279,12 +279,7 @@ int start_listening(int sockfd, char *argv[])
   cl_len = sizeof(cl_addr);
 
   newfd = accept(sockfd, (struct sockaddr *) &cl_addr, &cl_len);
-
-  if(newfd == -1)
-    {
-      perror("accept");
-      return -1;
-    }
+  check_error(newfd);
 
   inet_ntop(AF_INET, &(cl_addr.sin_addr), cl_ip, INET_ADDRSTRLEN);
   printf("Conexión aceptada a %s\n", cl_ip);
