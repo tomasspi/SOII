@@ -19,7 +19,7 @@ CFLAGS = -std=gnu11 -pedantic $(WARN) -I$(IDIR) -O1
 all: client server
 
 check:
-	cppcheck $(SDIR) --enable=all
+	cppcheck $(SDIR) 
 
 doc:
 	mkdir $(DDIR)
@@ -33,7 +33,7 @@ client:
 server:
 	$(CC) $(CFLAGS) $(SDIR)/sockets.c $(SDIR)/utilities.c $(MD5) $(SDIR)/primary_server.c -o $(ODIR)/$(SV)
 	$(CC) $(CFLAGS) $(SDIR)/sockets.c $(SDIR)/utilities.c $(MD5) $(SDIR)/auth_service.c -o $(ODIR)/$(AU)
-	$(CC) $(CFLAGS) $(SDIR)/sockets.c $(SDIR)/utilities.c $(MD5) $(SDIR)/files_service.c -o $(ODIR)/$(FI) 
+	$(CC) $(CFLAGS) $(SDIR)/sockets.c $(SDIR)/utilities.c $(MD5) $(SDIR)/files_service.c -o $(ODIR)/$(FI)
 
 .PHONY: clean
 

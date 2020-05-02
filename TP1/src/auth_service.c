@@ -44,6 +44,7 @@ char *validate_credentials(char input[2][STR_LEN],
 int  write_database(char data[COLUMNAS][STR_LEN], const char t, const char *new);
 
 char date[20];  /**< Fecha actual. */
+int err;        /**< Variable para el manejo de errores. */
 
 int main(void)
 {
@@ -53,7 +54,6 @@ int main(void)
   char database[COLUMNAS][STR_LEN]; /**< Almacena los datos obtenidos de la BD. */
 
   struct msg buf;
-  int err;
 
   err = get_queue();
   check_error(err);
@@ -101,8 +101,6 @@ int main(void)
  */
 void check_cmd(struct msg buf, int *msqid, char db[COLUMNAS][STR_LEN])
 {
-  int err;
-
   if(!strcmp(buf.msg,"ls"))
     {
       buf.mtype = to_prim;
@@ -142,7 +140,6 @@ char *validate_credentials(char input[2][STR_LEN],
                            char database[COLUMNAS][STR_LEN],
                            int *auth)
 {
-  int err;
   char *result = malloc(STR_LEN);
   static int tries = 2;
 
@@ -175,7 +172,6 @@ char *validate_credentials(char input[2][STR_LEN],
               {
                 strcpy(result, "Credenciales inválidas.\n");
                 tries--;
-                printf("%d\n", tries);
               }
             break;
         }

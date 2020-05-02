@@ -1,7 +1,7 @@
 /**
  * @file sockets.c
  * @brief
- * Header con las utilizades para la utilización de los sockets.
+ * implementación de las funciones de 'sockets.h'.
  *
  * @author Tomás Santiago Piñero
  */

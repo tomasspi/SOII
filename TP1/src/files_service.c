@@ -27,7 +27,7 @@ void send_image(char img[STR_LEN], long *size, int newfd);
 
 void send_img_data(char img[STR_LEN], long *size, struct msg buf, int msqid);
 
-int start_listening(int sockfd, char *ip);
+int  start_listening(int sockfd, char *ip);
 
 int main(int argc, char *argv[])
 {
@@ -164,7 +164,12 @@ void send_img_data(char img[STR_LEN], long *size, struct msg buf, int msqid)
   imgn = fopen(img, "r");
 
   if(imgn == NULL)
+  {
     perror("file");
+    strcpy(buf.msg, "La imagen no existe.\n");
+    msgsnd(msqid, &buf, sizeof(buf.msg), 0);
+    return;
+  }
 
   fseek(imgn, 0, SEEK_END); /* Calcula el tamaño de la imagen */
   *size = ftell(imgn);

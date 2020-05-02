@@ -10,7 +10,7 @@
 
 /**
  * @brief
- * Enum con con los destinos de los mensajes a enviar en la cola de mensajes.
+ * Enum con los destinos de los mensajes a enviar en la cola de mensajes.
  */
 enum msg_ID
 {

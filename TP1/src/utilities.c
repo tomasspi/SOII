@@ -1,3 +1,11 @@
+/**
+ * @file utilities.c
+ * @brief
+ * Implementación de las funciones de 'utilities.h'
+ *
+ * @author Tomás Santiago Piñero
+ */
+
 #include <openssl/md5.h>
 
 #include "utilities.h"
@@ -82,6 +90,7 @@ char *get_md5(char path[STR_LEN], size_t size)
     }
 
   MD5_Final(c, &md_context);
+  fclose(file);
 
   char *md5 = malloc(MD5_DIGEST_LENGTH * 2 + 1);
 

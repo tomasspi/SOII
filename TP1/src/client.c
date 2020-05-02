@@ -34,7 +34,7 @@ struct mbr            /** Estructura para leer la tabla MBR. */
 
 void ask_login(char buf[STR_LEN]);
 
-void little_to_big(char little[4], char big[8]);
+void little_to_big(char big[8], char little[4]);
 
 void show_mbr(char path_usb[STR_LEN]);
 

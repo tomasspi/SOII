@@ -1,3 +1,11 @@
+/**
+ * @file utilities.h
+ * @brief
+ * Header con las utilidades a los procesos.
+ *
+ * @author Tomás Santiago Piñero
+ */
+
 #include <sys/msg.h>
 #include <stdlib.h>
 #include <stdio.h>
