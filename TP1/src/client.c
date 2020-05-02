@@ -7,7 +7,6 @@
  * @author Tomás Santiago Piñero
  */
 
-#include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -21,11 +20,6 @@
 #include "sockets.h"
 #include "utilities.h"
 
-void ask_login(char buf[STR_LEN]);
-void little_to_big(char little[4], char big[8]);
-void show_mbr(char path[STR_LEN]);
-void show_prompt(int32_t sockfd, ssize_t rw, char buffer[STR_LEN], char ip[STR_LEN]);
-
 int32_t sockfd;
 
 struct mbr            /** Estructura para leer la tabla MBR. */
@@ -37,6 +31,16 @@ struct mbr            /** Estructura para leer la tabla MBR. */
   char start[4];      /** Sector de arranque de la partición. */
   char size[4];       /** Tamaño de la partición (en sectores). */
 } __attribute__((__packed__));
+
+void ask_login(char buf[STR_LEN]);
+
+void little_to_big(char little[4], char big[8]);
+
+void show_mbr(char path_usb[STR_LEN]);
+
+void show_prompt(int32_t sockfd, ssize_t rw, char buffer[STR_LEN], char ip[STR_LEN]);
+
+void write_usb(char buffer[STR_LEN], int32_t fifd, ssize_t rw);
 
 /**
  * @brief
@@ -81,15 +85,11 @@ int main(int argc, char *argv[])
     {
       ask_login(buffer);
 
-send: rw = send_cmd(sockfd,buffer);
-
-      if(rw == -1)
-        {
-          perror("write");
-          goto send;
-        }
+      rw = send_cmd(sockfd,buffer);
+      check_error((int) rw);
 
       rw = recv_cmd(sockfd, buffer);
+      check_error((int) rw);
 
       if(strchr(buffer,'/') != NULL)
         {
@@ -104,6 +104,9 @@ send: rw = send_cmd(sockfd,buffer);
     }
   while(tries > 0);
 
+  rw = send_cmd(sockfd, "exit");
+  check_error((int) rw);
+
   return EXIT_SUCCESS;
 }
 
@@ -116,22 +119,22 @@ send: rw = send_cmd(sockfd,buffer);
  */
 void ask_login(char buf[STR_LEN])
 {
-get_user:
+
   printf("Ingrese usuario: ");
 
   if(fgets(buf, STR_LEN, stdin) == NULL)
     {
       perror("fgets login");
-      goto get_user;
+      ask_login(buf);
     }
 
   if(buf[0] == '\n')
-    goto get_user;
-  else buf[strlen(buf)-1] = ',';
+    ask_login(buf);
+  else
+    buf[strlen(buf)-1] = ',';
 
   size_t coma = strlen(buf)-1;
 
-get_pass:
   printf("Ingrese contraseña: ");
 
   fflush(stdout);
@@ -158,7 +161,7 @@ get_pass:
   tcsetattr(STDIN_FILENO, TCSANOW, &original);
 
   if((strlen(buf)-1) == coma)
-    goto get_pass;
+    ask_login(buf);
 }
 
 /**
@@ -177,90 +180,31 @@ void show_prompt(int32_t sockfd, ssize_t rw, char buffer[STR_LEN], char ip[STR_L
     {
   		printf("#> ");
   		memset(buffer, '\0', STR_LEN);
-  		if(fgets(buffer, STR_LEN-1, stdin) == NULL) perror("fgets prompt");
+
+      if(fgets(buffer, STR_LEN-1, stdin) == NULL)
+        perror("fgets prompt");
+
       buffer[strlen(buffer)-1] = '\0';
 
       if(buffer[0] == '\0')
         goto prompt;
 
   		rw = send_cmd(sockfd, buffer);
-
-      if(rw == -1)
-        {
-          perror("write");
-          goto prompt;
-        }
+      check_error((int) rw);
 
       if(!strcmp(buffer, "exit"))
         exit(EXIT_SUCCESS);
 
-  read:
       rw = recv_cmd(sockfd, buffer);
-
-      if(rw == -1)
-        {
-          perror("read");
-          goto read;
-        }
+      check_error((int) rw);
 
       if(strstr(buffer,"Download") != NULL)
         {
-          char *tok = strtok(buffer, " ");
-          tok = strtok(NULL, " ");
-
-          size_t size = 0;
-          size_t size_for_md5;
-          sscanf(tok, "%lud", &size);
-          size_for_md5 = size;
-
           int32_t fifd = create_clsocket(ip, port_fi);
 
           printf("Writing...\n");
 
-          FILE *usb;
-          char path_usb[STR_LEN];
-          tok = strtok(NULL, " ");
-          strcpy(path_usb,tok);
-
-          char md5_recv[33];
-          tok = strtok(NULL, " ");
-          sprintf(md5_recv, "%s", tok);
-
-          usb = fopen(path_usb, "wb");
-
-          if(usb == NULL)
-            {
-              perror("open usb");
-              exit(EXIT_FAILURE);
-            }
-
-          do
-            {
-              rw = recv(fifd, buffer, STR_LEN, 0);
-              if(rw == -1)
-                perror("recv file");
-
-              fwrite(buffer, sizeof(char), (size_t) rw, usb);
-
-              size -= (size_t) rw;
-            }
-          while(size != 0);
-
-          sync();
-          fclose(usb);
-
-          printf("Done writing.\n");
-
-          char *md5 = get_md5(path_usb, size_for_md5);
-
-          //------ Termina de escribir y realiza la verificación del hash ------
-          if(!strcmp(md5_recv, md5))
-            {
-              printf("Escritura exitosa.\n");
-              show_mbr(path_usb);
-            }
-          else
-            printf("Escritura fallida.\n");
+          write_usb(buffer, fifd, rw);
 
           close(fifd);
         }
@@ -270,8 +214,71 @@ void show_prompt(int32_t sockfd, ssize_t rw, char buffer[STR_LEN], char ip[STR_L
 
 /**
  * @brief
+ * Se encarga de escribir la imagen recibida en el USB.
+ *
+ * @param buffer Contiene el tamaño de la imagen y su MD5.
+ * @param fifd   File descriptor que contiene la imagen.
+ * @param rw     Resultado de la lectura/escritura del socket.
+ */
+void write_usb(char buffer[STR_LEN], int32_t fifd, ssize_t rw)
+{
+  char *tok = strtok(buffer, " ");
+  tok = strtok(NULL, " ");
+
+  size_t size = 0;
+  size_t size_for_md5;
+  sscanf(tok, "%lud", &size);
+  size_for_md5 = size;
+
+  FILE *usb;
+  char path_usb[STR_LEN];
+  tok = strtok(NULL, " ");
+  strcpy(path_usb,tok);
+
+  char md5_recv[33];
+  tok = strtok(NULL, " ");
+  sprintf(md5_recv, "%s", tok);
+
+  usb = fopen(path_usb, "wb");
+
+  if(usb == NULL)
+    {
+      perror("open usb");
+      exit(EXIT_FAILURE);
+    }
+
+  do
+    {
+      rw = recv(fifd, buffer, STR_LEN, 0);
+      check_error((int) rw);
+
+      fwrite(buffer, sizeof(char), (size_t) rw, usb);
+
+      size -= (size_t) rw;
+    }
+  while(size != 0);
+
+  sync();
+  fclose(usb);
+
+  printf("Done writing.\n");
+
+  char *md5 = get_md5(path_usb, size_for_md5);
+
+  if(!strcmp(md5_recv, md5))
+    {
+      printf("Escritura exitosa.\n");
+      show_mbr(path_usb);
+    }
+  else
+    printf("Escritura fallida.\n");
+}
+
+/**
+ * @brief
  * Función encargada de leer la tabla MBR y mostrar sus contenidos.
- * @param path_usb[STR_LEN] Path al USB.
+ *
+ * @param table Tabla MBR.
  */
 void show_mbr(char path_usb[STR_LEN])
 {
@@ -293,8 +300,10 @@ void show_mbr(char path_usb[STR_LEN])
       exit(EXIT_FAILURE);
     }
 
-  printf("\n================================\n");
-  char boot[3];
+  printf("\nPartición 1:\n");
+
+  char boot[3], type[3];
+
   sprintf(boot, "%02x", table.boot[0] & 0xff);
 
   if(!strcmp(boot,"80"))
@@ -302,7 +311,6 @@ void show_mbr(char path_usb[STR_LEN])
   else
     printf(" - Booteable: No.\n");
 
-  char type[3];
   sprintf(type, "%02x", table.type[0] & 0xff);
 
   printf(" - Tipo de partición: %s\n", type);
@@ -337,10 +345,10 @@ void show_mbr(char path_usb[STR_LEN])
  * @param big    Valor en big endian.
  * @param little Valor en little endian.
  */
-void little_to_big(char big[8], char little[4])
+inline void little_to_big(char big[8], char little[4])
 {
   char byte[3];
-  for(int i = 3; i >= 0; i--)
+  for(int i = 2; i >= 0; i--)
   {
     sprintf(byte, "%02x", little[i] & 0xff);
     strcat(big, byte);

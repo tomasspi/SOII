@@ -44,9 +44,27 @@ void delete_queue(void)
     perror("msgctl");
 }
 
+void sig_handler()
+{
+  printf("\n");
+  exit(EXIT_FAILURE);
+}
+
 int main(int argc, char *argv[])
 {
   atexit(delete_queue);
+
+  struct sigaction ctrlc;
+
+  ctrlc.sa_handler = sig_handler;
+  sigemptyset(&ctrlc.sa_mask);
+  ctrlc.sa_flags = 0;
+
+  if(sigaction(SIGINT, &ctrlc, NULL) == -1)
+    {
+      perror("signal");
+      exit(EXIT_FAILURE);
+    }
 
   if(argc < 2)
     {
@@ -101,14 +119,13 @@ void loop_listen(int sockfd, ssize_t rw, char msg_buf[STR_LEN], char *argv[])
           check_error((int) rw);
         }
 
-      //------ Identificación y envío de mensaje ------
-      if(is_login(msg_buf)) //------ Inicio de sesión ------
+      if(is_login(msg_buf)) /* son credenciales? */
         {
           send_message(to_auth, buf, msg_buf);
           msgrcv(msqid, &buf, sizeof(buf.msg), to_prim, 0);
           send_client(rw, newfd, &buf);
         }
-      else //------ Es un comando ------
+      else /* es un comando */
         {
           int i = 0;
           char *comando[5], backup[STR_LEN];

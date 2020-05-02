@@ -23,16 +23,25 @@
 #define STATUS    'S'          /**< Utilizado para cambiar el estado en BD. */
 #define LINE_LEN  80           /**< Largo de la linea a leer. */
 
-void login(char buf[STR_LEN], char credentials[2][STR_LEN]);
-void get_date(char date[20]);
-void print_database(int msqid, struct msg buf);
-int  write_database(char data[COLUMNAS][STR_LEN], const char t, const char *new);
-void replace(char *str, const char *old, const char *new);
-bool check_database(char input[2][STR_LEN], char database[COLUMNAS][STR_LEN]);
+void check_cmd(struct msg buf, int *msqid, char db[COLUMNAS][STR_LEN], int *auth);
+
 int  check_credentials(char credentials[2][STR_LEN], char data[COLUMNAS][STR_LEN]);
+
+bool check_database(char input[2][STR_LEN], char database[COLUMNAS][STR_LEN]);
+
+void get_date(char date[20]);
+
+void login(char buf[STR_LEN], char credentials[2][STR_LEN]);
+
+void print_database(int msqid, struct msg buf);
+
+void replace(char *str, const char *old, const char *new);
+
 char *validate_credentials(char input[2][STR_LEN],
                            char database[COLUMNAS][STR_LEN],
-                           int tries, int *auth);
+                           int *auth);
+
+int  write_database(char data[COLUMNAS][STR_LEN], const char t, const char *new);
 
 char date[20];  /**< Fecha actual. */
 
@@ -50,7 +59,6 @@ int main(void)
   check_error(err);
   int msqid = err;
 
-  int tries = 3;
   int auth = 0;
 
   while(1)
@@ -58,68 +66,91 @@ int main(void)
       memset(buf.msg, '\0', sizeof(buf.msg));
       msgrcv(msqid, &buf, sizeof(buf.msg), to_auth, 0);
 
-      if(strstr(buf.msg,",") != NULL)
+      if(is_login(buf.msg))
       {
         do
           {
             login(buf.msg, input);
 
-            char *result = validate_credentials(input, database, tries, &auth);
+            char *result = validate_credentials(input, database, &auth);
 
             strcpy(buf.msg,result);
-
+            
             buf.mtype = to_prim;
             msgsnd(msqid, &buf, sizeof(buf.msg), 0);
+
+            if(!auth)
+              msgrcv(msqid, &buf, sizeof(buf.msg), to_auth, 0);
           }
-        while(tries && !auth);
+        while(!auth);
       }
-      else
-       {
-        if(!strcmp(buf.msg, "exit"))
-          {
-            auth = 0;
-            tries = 3;
-          }
-
-        if(!strcmp(buf.msg,"ls"))
-          {
-            buf.mtype = to_prim;
-            print_database(msqid, buf);
-          }
-        else
-          {
-            buf.mtype = to_prim;
-
-            if(!strcmp(buf.msg, database[1]))
-              {
-                strcpy(buf.msg, "User and password can't be the same.\n");
-                msgsnd(msqid, &buf, sizeof(buf.msg), 0);
-              }
-            else
-              {
-                if(write_database(database, PASSWD, buf.msg) != 1)
-                  perror("write_database");
-
-                else
-                  {
-                    strcpy(database[COLUMNAS-3],buf.msg);
-
-                    strcpy(buf.msg, "Password changed successfully.\n");
-                    msgsnd(msqid, &buf, sizeof(buf.msg), 0);
-                  }
-              }
-          }
-        }
+      else check_cmd(buf, &msqid, database, &auth);
     }
 
   return EXIT_SUCCESS;
 }
 
+/**
+ * @brief
+ * Raliza el checkeo del comando y ejecuta acorde al mismo.
+ *
+ * @param buf    Mensaje a enviar a 'primary_server'.
+ * @param msqid  ID de la cola de mensajes.
+ * @param db     Datos obtenidos de la base de datos.
+ * @param auth   Flag de autorización.
+ */
+void check_cmd(struct msg buf, int *msqid, char db[COLUMNAS][STR_LEN], int *auth)
+{
+  int err;
+
+  if(!strcmp(buf.msg, "exit"))
+    {
+      *auth = 0;
+      return;
+    }
+
+  if(!strcmp(buf.msg,"ls"))
+    {
+      buf.mtype = to_prim;
+      print_database(*msqid, buf);
+    }
+  else
+    {
+      buf.mtype = to_prim;
+
+      if(!strcmp(buf.msg, db[1]))
+        {
+          strcpy(buf.msg, "User and password can't be the same.\n");
+          msgsnd(*msqid, &buf, sizeof(buf.msg), 0);
+        }
+      else
+        {
+          err = write_database(db, PASSWD, buf.msg);
+          check_error(err);
+
+          strcpy(db[COLUMNAS-3],buf.msg);
+
+          strcpy(buf.msg, "Password changed successfully.\n");
+          msgsnd(*msqid, &buf, sizeof(buf.msg), 0);
+        }
+    }
+}
+
+/**
+ * @brief
+ * Función que recibe las credenciales y las valida contra la base de datos.
+ * @param  ipnut    Credenciales.
+ * @param  database Credenciales en la base de datos.
+ * @param  auth     Flag de autorización.
+ * @return          Resultado de la validación.
+ */
 char *validate_credentials(char input[2][STR_LEN],
                            char database[COLUMNAS][STR_LEN],
-                           int tries, int *auth)
+                           int *auth)
 {
+  int err;
   char *result = malloc(STR_LEN);
+  static int tries = 2;
 
   if(check_database(input, database))
     {
@@ -133,21 +164,24 @@ char *validate_credentials(char input[2][STR_LEN],
             strcpy(result, database[COLUMNAS-1]);
             get_date(date);
 
-            if(write_database(database, FECHA, date) != 1)
-              perror("write_database");
+            err = write_database(database, FECHA, date);
+            check_error(err);
 
             *auth = 1;
             break;
 
           case invalid:
-            strcpy(result, "Credenciales inválidas.\n");
-            tries--;
-
             if(tries == 0)
               {
                 strcpy(result, "El usuario ha sido bloqueado.\n");
-                if(write_database(database, STATUS, BLOCKED_Q) != 1)
-                  perror("write_database");
+                write_database(database, STATUS, BLOCKED_Q);
+                tries = 3;
+              }
+            else
+              {
+                strcpy(result, "Credenciales inválidas.\n");
+                tries--;
+                printf("%d\n", tries);
               }
             break;
         }
@@ -327,7 +361,10 @@ int write_database(char data[COLUMNAS][STR_LEN], const char t, const char *new)
   reemplazo = fopen(TMP_PATH, "w");
 
   if(archivo == NULL || reemplazo == NULL)
+  {
     perror("write_database");
+    return -1;
+  }
 
   while(fgets(string, LINE_LEN, archivo) != NULL)
     {
