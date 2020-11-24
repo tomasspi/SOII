@@ -14,7 +14,7 @@ las clases.
 
 ------------------
 
-#### Trabajo práctico N° 2: [**_OpenMP_**]<!---(https://github.com/tomasspi/SOII/tree/master/TP2)-->
+#### Trabajo práctico N° 2: [**_OpenMP_**](https://github.com/tomasspi/SOII/tree/master/TP2)
 
 #### Objetivo
 El objetivo del trabajo es diseñar una solución que utilice el paradigma de
@@ -23,14 +23,14 @@ imagen _BMP_.
 
 ------------------
 
-#### Trabajo práctico N° 3: [**_TBD_**]<!---(https://github.com/tomasspi/SOII/tree/master/TP3)-->
+#### Trabajo práctico N° 3: [**_Sistemas embebidos_**](https://github.com/tomasspi/SOII/tree/master/TP3)
 
 #### Objetivo
 
 
 ------------------
 
-#### Trabajo práctico N° 4: [**_TBD_**]<!---(https://github.com/tomasspi/SOII/tree/master/TP4)-->
+#### Trabajo práctico N° 4: [**_FreeRTOS_**](https://github.com/tomasspi/SOII/tree/master/TP4)
 
 #### Objetivo
 
