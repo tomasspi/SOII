@@ -200,46 +200,52 @@ void print_images(int msqid, struct msg buf)
   dir = opendir(IMGS_PATH);
 
   if(dir == NULL)
-    perror("print imgs directory");
-
-  strcat(msg, "=====================================================================================\n");
-
-  sprintf(buf.msg, "%-35s %-15s %-15s\n", "Imagen", "Tamaño [MB]", "MD5");
-  strcat(msg, buf.msg);
-
-  strcat(msg, "=====================================================================================\n");
-
-  while ((direct = readdir(dir)) != NULL)
-  {
-    if (direct->d_type == DT_REG)
     {
-      long size = 0;
-
-      FILE *file;
-      char path[100];
-      strcpy(path, IMGS_PATH);
-      strcat(path,"/");
-      strcat(path,direct->d_name);
-
-      file = fopen(path, "r");
-      if(file == NULL)
-        perror("file");
-
-      //------ Tamaño del archivo ------
-      fseek(file, 0, SEEK_END);
-      size = ftell(file);
-      size /= 1000000;
-      fclose(file);
-
-      char *md5 = get_md5(path, 0);
-
-      sprintf(buf.msg, "%-35s %-14ld %-15s\n", direct->d_name, size, md5);
-      strcat(msg, buf.msg);
+      perror("print imgs directory");
+      strcmp(buf.msg, "No existe el directorio de imágenes.");
+      msgsnd(msqid, &buf, sizeof(buf.msg), 0);
     }
-  }
-  closedir(dir);
-  strcpy(buf.msg, msg);
-  msgsnd(msqid, &buf, sizeof(buf.msg), 0);
+  else
+    {
+      strcat(msg, "=====================================================================================\n");
+
+      sprintf(buf.msg, "%-35s %-15s %-15s\n", "Imagen", "Tamaño [MB]", "MD5");
+      strcat(msg, buf.msg);
+
+      strcat(msg, "=====================================================================================\n");
+
+      while ((direct = readdir(dir)) != NULL)
+      {
+        if (direct->d_type == DT_REG)
+        {
+          long size = 0;
+
+          FILE *file;
+          char path[100];
+          strcpy(path, IMGS_PATH);
+          strcat(path,"/");
+          strcat(path,direct->d_name);
+
+          file = fopen(path, "r");
+          if(file == NULL)
+            perror("file");
+
+          //------ Tamaño del archivo ------
+          fseek(file, 0, SEEK_END);
+          size = ftell(file);
+          size /= 1000000;
+          fclose(file);
+
+          char *md5 = get_md5(path, 0);
+
+          sprintf(buf.msg, "%-35s %-14ld %-15s\n", direct->d_name, size, md5);
+          strcat(msg, buf.msg);
+        }
+      }
+      closedir(dir);
+      strcpy(buf.msg, msg);
+      msgsnd(msqid, &buf, sizeof(buf.msg), 0);
+    }
 
   memset(msg, '\0', STR_LEN-1);
   memset(buf.msg, '\0', sizeof(buf.msg));
