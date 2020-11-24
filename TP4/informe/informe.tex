@@ -1,0 +1,495 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel} % Para modificar labels por defecto
+\usepackage[bottom]{footmisc} % Para las notas al pie de la página
+\usepackage[T1]{fontenc}
+\usepackage{siunitx}
+\usepackage{tocbibind} % Bibliografía en el indice
+\usepackage{titlesec} % Posibilidad de editar los formatos de chapter
+\usepackage{amsmath,amssymb,mathrsfs} % Matemáticas varias
+\usepackage{tabularx} % Para las tablas
+\usepackage[title]{appendix} % Para anexos
+\usepackage{fancyhdr}
+\renewcommand{\baselinestretch}{1} % Interlineado. 1 es estandar
+% --- Arreglos varios para la inclusion de imagenes
+\usepackage{float}
+\usepackage[pdftex]{graphicx}
+\usepackage{subfigure}
+\graphicspath{{/home/mrgreen/Pictures/}}
+\usepackage[usenames,dvipsnames]{color}
+\DeclareGraphicsExtensions{.png,.jpg,.pdf,.mps,.gif,.bmp}
+% --- Para las dimensiones de los márgenes etc
+\frenchspacing \addtolength{\hoffset}{-1.5cm}
+\addtolength{\textwidth}{3cm} \addtolength{\voffset}{-2.5cm}
+\addtolength{\textheight}{4cm}
+% --- Para el encabezado
+\setlength{\headheight}{33pt}
+
+\fancyhead[R]{\includegraphics[height=1cm]{logo_fcefyn_nuevo.jpg}}
+\fancyhead[L]{\includegraphics[height=1cm]{unc1_a.jpg}}
+\fancyhead[C]{}
+\fancyfoot[C]{Página \thepage} \renewcommand{\footrulewidth}{0.4pt}
+\pagestyle{fancy}
+% --- Para las tablas
+\usepackage{multirow} % Juntar filas
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}} % Justificar Izq
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}} % Justificar Centrar
+\newcolumntype{R}[1]{>{\raggedleft\arraybackslash}p{#1}} % Justificar Der
+\usepackage[numbered]{bookmark} % Para que figure las secciones en el PDF
+\usepackage{listings} % Para poner código
+\usepackage{enumitem} % Para editar las propiedades de los items
+\lstset{frame=single} % Código en un cuadro
+\definecolor{negrou}{gray}{0.15} % Color gris para el fondo de las terminales
+\lstset{basicstyle=\color{white}, backgroundcolor=\color{negrou}} % Código en un cuadro
+% --- Para Anexo
+\addto\captionsspanish{%
+  \renewcommand\appendixname{ANEXO}
+  \renewcommand\appendixpagename{ANEXOS}
+  \renewcommand\tablename{Tabla}
+}
+% --- Quita los cuadrados de colores en los hipervínculos
+\hypersetup{
+	colorlinks = true,
+	linkcolor  = black,
+	urlcolor   = black,
+  citecolor  = black,
+  filecolor  = black,
+  anchorcolor = black}
+% -------------------------------------------------------- %
+% Definicion de colores para el codigo
+
+\lstdefinelanguage{Ce}{
+  backgroundcolor=\color{white},		%color de fondo
+  commentstyle=\color{CadetBlue},		%color de los comentarios
+  keywordstyle=\color{Plum},			%color de las palabras reservadas
+  numberstyle=\tiny\color{ForestGreen},	%numero de línea con tamaño y color
+  numbers=left,                    	%posicion de los numeros
+  numbersep=5pt,   					%espaciado entre los numeros
+  stringstyle=\color{OliveGreen},		%color de las strings
+  basicstyle=\ttfamily\footnotesize,	%estilo de fuente
+  breakatwhitespace=false,         	%romper estacios en blanco
+  breaklines=true,                 	%romper lineas
+  frame=single,						%para encuadrar el codigo
+  rulecolor=\color{black},			%color del cuadro
+  showspaces=false,
+  showstringspaces=false,
+  showtabs=false,
+  tabsize=2,
+  language=C
+}
+
+\renewcommand{\lstlistingname}{Código}
+
+% -------------------------------------------------------- %
+
+\begin{document}
+
+\begin{titlepage}
+    \begin{center}
+      \vspace*{1cm}
+
+      \vspace{2cm}
+      \includegraphics[width=0.4\textwidth]{unc1_a.jpg}
+      \includegraphics[width=0.4\textwidth]{logo_fcefyn_nuevo.jpg}
+
+      \Huge
+      \textbf{Cátedra de Sistemas Operativos II}
+
+      \vspace{3.5cm}
+
+      \textbf{Trabajo Práctico N\si{\degree} III}
+
+      \vfill
+
+      \vspace{0.8cm}
+
+
+
+      \Large
+      Piñero, Tomás Santiago\\
+      25 de Junio de 2020
+    \end{center}
+\end{titlepage}
+% -------------------------------------------------------- %
+% --- Tabla de contenidos
+
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{5}
+\tableofcontents
+
+% -------------------------------------------------------- %
+
+\newpage
+\renewcommand{\baselinestretch}{1}
+\setlength{\parskip}{0.5em}
+
+\section{Introducción}
+\label{intro}
+
+\subsection{Objetivo}
+\label{objetivo}
+El objetivo del trabajo es diseñar, crear, comprobar y validar una
+aplicación de tiempo real sobre un RTOS.
+
+
+\subsection{Definiciones, Acrónimos y Abreviaturas}
+\label{daa}
+
+\begin{itemize}
+  \item \emph{RTOS}: \emph{Real Timer Operative System}. Sistema operativo en
+  tiempo real.
+  \item \emph{FreeRTOS}: es un sistema operativo en tiempo real para
+  microcontroladores y pequeños microprocesadores.
+  \cite{freertos}
+  \item \emph{qemu}: es un emulador y virtualizador de procesadores genérico.
+  \cite{qemu}
+  \item \emph{UART}: Transmisor-receptor universal asíncrono.
+\end{itemize}
+
+
+\section{Descripción general}
+\label{desc}
+
+\subsection{Esquema del proyecto}
+\label{esq}
+
+El proyecto está dividido en las siguientes carpetas:
+
+\begin{itemize}[leftmargin=1.5cm]
+  \item \textbf{FreeRTOS}: contiene los archivos necesarios para la ejecución
+  de \emph{FreeRTOS}. Los archivos fuentes de este último se encuentran en el
+  subdirectorio \verb|Source|, mientras que los archivos del trabajo práctico
+  se encuentran en el subdirectorio \verb|Demo/src|.
+
+  \item \textbf{informe}: contiene los archivos correspondientes al informe.
+\end{itemize}
+
+\subsection{Requisitos futuros}
+\label{futurereq}
+
+\begin{itemize}[leftmargin=1.5cm]
+  \item Mejorar la estructura de los directorios.
+  \item Realizar el trabajo práctico en una \verb|LPC769|.
+\end{itemize}
+
+\newpage
+\section{Diseño de solución}
+\label{solucion}
+Como se mencionó en la sección anterior, se organizó el proyecto en varias
+carpetas (ver \textbf{\ref{esq}}).
+
+Para realizar el práctico primero se consultó la documentación de \emph{FreeRTOS}
+\cite{freedoc} y el libro \emph{Mastering the FreeRTOS Real Time Kernel,
+A hands-on tutorial guide} \cite{freebook}. Consecuentemente, se decidió
+utilizar el manejo de memoria dinámico \verb|heap_4.c|\cite{heap4}, que utiliza
+el método \emph{Firs Fit} para la asignación y es el recomendado.
+
+La comunicación de las tareas se realiza mediante colas\cite{queue}, por lo que
+habrá una única cola en todo el sistema.
+
+\subsection{Alnálisis del \emph{scheduler}}
+\label{sched}
+La documentación de \emph{FreeRTOS} explica que \emph{scheduler} siempre elige
+la tarea con mayor prioridad que esté lista para ejecutarse (\emph{Ready state})
+y, en caso de existir dos tareas con la misma prioridad, utiliza el método
+\emph{Round Robin} alternando entre ellas.
+
+Para verificar esto, se utilizó la tarea \emph{top} que muestra el estado del
+sistema con la misma prioridad que la tarea con máxaima prioridad. En el caso de
+este trabajo, las tareas no abandonan el procesador por sí solas, realizando
+que el \emph{scheduler} funcione simplemente por nivel de prioridad.
+
+A continuación, se muestra el estado del sistema con el consumidor con mayor
+prioridad sobre los productores:
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[scale=0.7]{Cmax.png}
+  \caption{Ejecución del programa con prioridad máxima (4) para C1.}
+  \label{cmax}
+\end{figure}
+
+\newpage
+Como puede observarse en la Fig. \textbf{\ref{cmax}}, el consumidor ocupa todo
+el tiempo del procesador, debido a que la tarea siempre está lista para
+ejecutarse y tiene la mayor prioridad, produciéndose así la inanición a los
+productores.
+
+En caso de tener todas las tareas la misma prioridad, el \emph{scheduler} reparte
+el tiempo del procesador entre los procesos con el método \emph{Round Robin}.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[scale=0.7]{Equals.png}
+  \caption{Ejecución del programa con todas las tareas con la misma prioridad.}
+  \label{equals}
+\end{figure}
+
+Como se puede observar en la Fig. \textbf{\ref{equals}}, todas las tareas
+tuvieron un mismo tiempo de ejecución debido a que todas ellas comparten la
+misma prioridad.
+
+\subsection{\emph{Stack} mínimo para cada tarea}
+\label{minstack}
+Mediante la función \verb|uxTaskGetStackHighWatermark| se puede conocer la
+cantidad de espacio de la pila que no fue utilizado durante la ejecución de la
+tarea. Este valor se encuentra expresado en palabras (\emph{words})\cite{water},
+por lo que en un sistema de 32 bits, una palabra significan 4 bytes de pila no
+utilizada.
+
+Se iniciará con un valor de 280 bytes (70 en palabras) para cada tarea y se
+utilizará la función para ajustarlo según la tarea.
+
+\subsection{\emph{Top Task}}
+\label{toptask}
+La tarea tipo \emph{top} de \emph{Linux} puede realizarse con la función
+\verb|vTaskGetRunTimeStats|, que genera y muestra una tabla con la información
+sobre el uso de la CPU de cada tarea. Esta tarea se ejecutará cada 5 segundos,
+pero este tiempo puede ser modificado al momento de ejecución modificando la
+variable \verb|mainCHECK_DELAY|, cuyo valor se encuentra expresado en
+milisegundos.
+
+
+\section{Implementación y resultados}
+\label{impres}
+Toda muestra de información se realiza por medio del periférico \emph{UART},
+que se muestra en consola utilizando la \emph{flag} \verb|-serial mon:stdio| de
+\emph{qemu}.
+
+Se utilizó la prioridad máxima por defecto \verb|configMAX_PRIORITIES|, cuyo
+valor es 5 y es utilizada como base para la prioridad de todas las tareas, por lo
+que la prioridad de la tarea puede ir de 0 a 4.
+
+\subsection{Productor}
+\label{prodtask}
+Los productores utilizan el Código \textbf{\ref{ptask}}, en el que simplemente
+produce (pone en la cola) su nombre. Su prioridad es 2
+(\verb|configMAX_PRIORITIES-3|).
+
+\begin{lstlisting}[caption={Función `\emph{vProducerTask}'.}, label={ptask}, language=Ce]
+static void vProducerTask( void *pvParameters )
+{
+  UBaseType_t uxHighWaterMark;
+	uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
+	char *pcMessage = pcTaskGetName( NULL );
+
+	for( ;; )
+	{
+		/* Send message to the queue. */
+		if(xQueueSend( xPrintQueue, &pcMessage, 0 ) != pdTRUE)
+		{
+			;
+			// vUARTPrint(pcMessage);
+			// vUARTPrint(" cannot send message.\n\r");
+		}
+
+		uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
+	}
+}
+\end{lstlisting}
+
+\subsection{Consumidor}
+\label{contask}
+El consumidor muestra qué valor de la cola ha consumido cada 1 segundo con el
+siguiente formato:
+
+\begin{center}
+\verb|C1 -> `nombreProductor'|
+\end{center}
+
+Su código es el siguiente:
+
+\begin{lstlisting}[caption={Función `\emph{vConsumerTask}'.}, label={ctask}, language=Ce]
+static void vConsumerTask( void *pvParameters )
+{
+  UBaseType_t xStatus;
+	char *pcMessage;
+	char *pcTaskName = pcTaskGetName( NULL );
+
+
+	for( ;; )
+	{
+		// vTaskDelay(1000);
+		/* Wait for a message to arrive. */
+		if(xQueueReceive( xPrintQueue, &pcMessage, 0 ) == pdFALSE)
+		{
+			;//vUARTPrint("Empty queue.\n\r"); portMAX_DELAY
+		}
+		else
+		{
+			/* Print Consumer name -> Producer name */
+			vUARTPrint(pcTaskName);
+			vUARTPrint(" -> ");
+			vUARTPrint(pcMessage);
+			vUARTPrint("\r\n");
+		}
+	}
+}
+\end{lstlisting}
+
+\subsection{\emph{Top}}
+\label{totask}
+La tarea top se llevo a cabo utilizando las funciones \emph{vTaskList} y
+\emph{vTaskGetRunTimeStats} provistas por \emph{FreeRTOS}. La primera muestra
+el estado de las tareas del sistema con el siguiente formato:
+
+\begin{center}
+\verb|Tarea    Estado    Prioridad    Stack    Numero de tarea|
+\end{center}
+
+La segunda función, muestra el tiempo que cada tarea estuvo utilizando el
+procesador, tanto en valor absoluto como en porcentaje, de la siguiente forma:
+
+\begin{center}
+\verb|Tarea    ABS    %CPU|
+\end{center}
+
+La tarea \emph{top} se ejecuta cada 5 segundos y su código es el siguiente:
+
+\begin{lstlisting}[caption={Función `\emph{vTopTask}'.}, label={run}, language=Ce]
+static void vTopTask( void *pvParameters )
+{
+	TickType_t xLastExecutionTime;
+	char *buffer = pvPortMalloc(sizeof(char));
+
+	/* Initialise xLastExecutionTime so the first call to vTaskDelayUntil()
+	works correctly. */
+	xLastExecutionTime = xTaskGetTickCount();
+
+	for( ;; )
+	{
+		/* Perform this check every mainCHECK_DELAY milliseconds. */
+		vTaskDelayUntil( &xLastExecutionTime, mainCHECK_DELAY );
+
+
+		/* Imprimir 'top' cada 5 segundos */
+		vUARTPrint("\n----------------Runtime Stats-----------------\n\r");
+		vUARTPrint("Task\t\tABS\t\t%CPU\n\r");
+		vUARTPrint("----------------------------------------------\n\r");
+
+		vTaskGetRunTimeStats(buffer);
+		vUARTPrint(buffer);
+		vUARTPrint("----------------------------------------------\n\r");
+
+		vUARTPrint("\n------------------Task State------------------\n\r");
+		vUARTPrint("Task\t\tState\tPrio\tStack\tNum\n\r");
+		vUARTPrint("----------------------------------------------\n\r");
+		vTaskList(buffer);
+		vUARTPrint(buffer);
+		vUARTPrint("----------------------------------------------\n\r");
+	}
+}
+
+\end{lstlisting}
+
+
+\subsection{Resultados}
+\label{results}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[scale=0.5]{restp4.png}
+  \caption{Ejecución del programa.}
+  \label{exec}
+\end{figure}
+
+La Fig. \textbf{\ref{exec}} muestra la ejecución del programa, donde se puede
+observar el orden en que los productores lograron acceder a la cola.
+Pasados los 5 segundos, se imprimen las estadísticas de las tareas del sistema.
+La única ejecutándose es la tarea \emph{top}, ya que para obtener estas
+estadísticas, \emph{FreeRTOS} bloquea la tarea Consumidor, que tiene la misma
+prioridad, mientras que las demás están listas para ejecutarse.
+
+\section{Conclusiones}
+\label{conc}
+Utilizando la función \verb|uxTaskGetStackHighWatermark| y la tarea \emph{top}
+se pudo definir el tamaño de pila necesario para cada tarea, si bien la
+documentación oficial recomienda no cambiar el valor por defecto, los cambios
+realizados no afectaron el funcionamiento del programa.
+
+Respecto al trabajo práctico, lo que más dificultad generó fue la tarea \emph{top},
+dado que las funciones leídas de la documentación no funcionaban como uno
+esperaba. Su implementación llevó tiempo debido a esto y a que se tuvo que
+llegar a conocer la placa con la que se estaba trabajando.
+
+\newpage
+\begin{appendices}
+\section{Guía paso a paso}
+\label{app:howto}
+
+Para poder ejecutar el programa deben ejecutarse los siguientes comandos
+(la ejecución se detiene presionando \texttt{Ctrl+A X}):
+
+\subsection{\emph{Github}}
+\label{git}
+
+\begin{lstlisting}[breaklines,language=bash,basicstyle=\ttfamily\color{white}]
+ $ git clone https://github.com/Sistemas-Operativos-II-2020/so2-tp4-rtos-tomasspi.git
+ $ cd so2-tp1-rtos-tomasspi/FreeRTOS/Demo/src
+ $ make
+ $ qemu-system-arm -machine lm3s811evb -cpu cortex-m3 -nographic -serial mon:stdio -kernel gcc/RTOSDemo.axf -gdb tcp::3333
+\end{lstlisting}
+
+\subsection{Archivo comprimido}
+\label{tar}
+
+Cambiar la letra n por la ñ en `Pinero'.
+
+\begin{lstlisting}[breaklines,language=bash,basicstyle=\ttfamily\color{white}]
+ $ tar -zxvf TP4_TPinero_39445871.tar.gz
+ $ cd TP4_TPinero_39445871/FreeRTOS/Demo/src
+ $ make
+ $ qemu-system-arm -machine lm3s811evb -cpu cortex-m3 -nographic -serial mon:stdio -kernel gcc/RTOSDemo.axf -gdb tcp::3333
+\end{lstlisting}
+
+\section{\emph{Debugging}}
+\label{debug}
+Para realizar un \emph{debugging} se deben ingresar los siguientes comandos
+desde el directorio \verb|src|:
+
+\begin{lstlisting}[breaklines,language=bash,basicstyle=\ttfamily\color{white}]
+ $ gdb-multiarch gcc/RTOSDemo.axf
+ $ target remote localhost:3333
+\end{lstlisting}
+
+A partir de ese momento, pueden utilizarse los comandos de \emph{gdb}\cite{cheat}.
+\end{appendices}
+
+\begin{thebibliography}{9}
+\bibitem{freertos}
+\emph{FreeRTOS},
+\\\texttt{\href{https://www.freertos.org/}{Link to FreeRTOS}}
+
+\bibitem{freedoc}
+\emph{FreeRTOS, API Reference},
+\\\texttt{\href{https://www.freertos.org/a00106.html}{Link to FreeRTOS API Reference}}
+
+\bibitem{freebook}
+\emph{Richard Barry, Mastering the FreeRTOS Real Time Kernel, A hands-on tutorial guide},
+\\\texttt{\href{https://www.freertos.org/wp-content/uploads/2018/07/161204_Mastering_the_FreeRTOS_Real_Time_Kernel-A_Hands-On_Tutorial_Guide.pdf}{Link to Mastering FreeRTOS}}
+
+\bibitem{heap4}
+\emph{FreeRTOS, Memory Management},
+\\\texttt{\href{https://www.freertos.org/a00111.html}{Link to Memory Management}}
+
+\bibitem{queue}
+\emph{FreeRTOS, Queues},
+\\\texttt{\href{https://www.freertos.org/Embedded-RTOS-Queues.html}{Link to Queues}}
+
+\bibitem{water}
+\emph{FreeRTOS, Documentation},
+\\\texttt{\href{https://www.freertos.org/uxTaskGetStackHighWaterMark.html}{Link to uxTaskGetStackHighWaterMark}}
+
+\bibitem{state}
+\emph{FreeRTOS, Documentation},
+\\\texttt{\href{https://www.freertos.org/uxTaskGetSystemState.html}{Link to uxTaskGetSystemState}}
+
+\bibitem{qemu}
+\emph{qemu},
+\\\texttt{\href{https://www.qemu.org/}{Link to qemu}}
+
+\bibitem{cheat}
+\emph{rkubik, gdb cheatsheet},
+\\\texttt{\href{https://gist.github.com/rkubik/b96c23bd8ed58333de37f2b8cd052c30}{Link to gdb cheatsheet}}
+\end{thebibliography}
+\end{document}
