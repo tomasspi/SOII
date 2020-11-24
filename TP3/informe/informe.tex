@@ -1,0 +1,549 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel} % Para modificar labels por defecto
+\usepackage[bottom]{footmisc} % Para las notas al pie de la página
+\usepackage[T1]{fontenc}
+\usepackage{siunitx}
+\usepackage{tocbibind} % Bibliografía en el indice
+\usepackage{titlesec} % Posibilidad de editar los formatos de chapter
+\usepackage{amsmath,amssymb,mathrsfs} % Matemáticas varias
+\usepackage{tabularx} % Para las tablas
+\usepackage[title]{appendix} % Para anexos
+\usepackage{fancyhdr}
+\renewcommand{\baselinestretch}{1} % Interlineado. 1 es estandar
+% --- Arreglos varios para la inclusion de imagenes
+\usepackage{float}
+\usepackage[pdftex]{graphicx}
+\usepackage{subfigure}
+\graphicspath{{/home/mrgreen/Pictures/}}
+\usepackage[usenames,dvipsnames]{color}
+\DeclareGraphicsExtensions{.png,.jpg,.pdf,.mps,.gif,.bmp}
+% --- Para las dimensiones de los márgenes etc
+\frenchspacing \addtolength{\hoffset}{-1.5cm}
+\addtolength{\textwidth}{3cm} \addtolength{\voffset}{-2.5cm}
+\addtolength{\textheight}{4cm}
+% --- Para el encabezado
+\setlength{\headheight}{33pt}
+
+\fancyhead[R]{\includegraphics[height=1cm]{logo_fcefyn_nuevo.jpg}}
+\fancyhead[L]{\includegraphics[height=1cm]{unc1_a.jpg}}
+\fancyhead[C]{}
+\fancyfoot[C]{Página \thepage} \renewcommand{\footrulewidth}{0.4pt}
+\pagestyle{fancy}
+% --- Para las tablas
+\usepackage{multirow} % Juntar filas
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}} % Justificar Izq
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}} % Justificar Centrar
+\newcolumntype{R}[1]{>{\raggedleft\arraybackslash}p{#1}} % Justificar Der
+\usepackage[numbered]{bookmark} % Para que figure las secciones en el PDF
+\usepackage{listings} % Para poner código
+\usepackage{enumitem} % Para editar las propiedades de los items
+\lstset{frame=single} % Código en un cuadro
+%\definecolor{negrou}{gray}{0.15} % Color gris para el fondo de las terminales
+\lstset{basicstyle=\ttfamily} % Código en un cuadro
+% --- Para Anexo
+\addto\captionsspanish{%
+  \renewcommand\appendixname{ANEXO}
+  \renewcommand\appendixpagename{ANEXOS}
+  \renewcommand\tablename{Tabla}
+}
+% --- Quita los cuadrados de colores en los hipervínculos
+\hypersetup{
+	colorlinks = true,
+	linkcolor  = black,
+	urlcolor   = black,
+  citecolor  = black,
+  filecolor  = black,
+  anchorcolor = black}
+% -------------------------------------------------------- %
+% Definicion de colores para el codigo
+
+\lstdefinelanguage{Ce}{
+  backgroundcolor=\color{white},		%color de fondo
+  commentstyle=\color{CadetBlue},		%color de los comentarios
+  keywordstyle=\color{Plum},			%color de las palabras reservadas
+  numberstyle=\tiny\color{ForestGreen},	%numero de línea con tamaño y color
+  numbers=left,                    	%posicion de los numeros
+  numbersep=5pt,   					%espaciado entre los numeros
+  stringstyle=\color{OliveGreen},		%color de las strings
+  basicstyle=\ttfamily\footnotesize,	%estilo de fuente
+  breakatwhitespace=false,         	%romper estacios en blanco
+  breaklines=true,                 	%romper lineas
+  frame=single,						%para encuadrar el codigo
+  rulecolor=\color{black},			%color del cuadro
+  showspaces=false,
+  showstringspaces=false,
+  showtabs=false,
+  tabsize=2,
+  language=C
+}
+
+\renewcommand{\lstlistingname}{Código}
+
+% -------------------------------------------------------- %
+
+\begin{document}
+
+\begin{titlepage}
+    \begin{center}
+      \vspace*{1cm}
+
+      \vspace{2cm}
+      \includegraphics[width=0.4\textwidth]{unc1_a.jpg}
+      \includegraphics[width=0.4\textwidth]{logo_fcefyn_nuevo.jpg}
+
+      \Huge
+      \textbf{Cátedra de Sistemas Operativos II}
+
+      \vspace{3.5cm}
+
+      \textbf{Trabajo Práctico N\si{\degree} III}
+
+      \vfill
+
+      \vspace{0.8cm}
+
+
+
+      \Large
+      Piñero, Tomás Santiago\\
+      4 de Junio de 2020
+    \end{center}
+\end{titlepage}
+% -------------------------------------------------------- %
+% --- Tabla de contenidos
+
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{5}
+\tableofcontents
+
+% -------------------------------------------------------- %
+
+\newpage
+\renewcommand{\baselinestretch}{1}
+\setlength{\parskip}{0.5em}
+
+\section{Introducción}
+\label{intro}
+
+\subsection{Objetivo}
+\label{objetivo}
+El objetivo del trabajo es lograr una visión \emph{end to end} de una
+implementación básica de una \emph{RESTful API} sobre un sistema embedido.
+
+
+\subsection{Definiciones, Acrónimos y Abreviaturas}
+\label{daa}
+
+\begin{itemize}
+  \item \emph{API}: \emph{Application Programming Interface}. Es un conjunto
+  de funciones ofrecidas para ser utilizadas por otro software.
+  \item \emph{REST}: \emph{Representational State Transfer}. Es un diseño de
+  software para los servicios web. Estos servicios web son llamados
+  \emph{RESTful Web services} y proveen operaciones entre computadoras en Internet.
+  \cite{restful}
+  \item \emph{Framework}: es una estructura conceptual y tecnológica de soporte
+  definido, normalmente con módulos de software concretos, que puede servir de
+  base para la organización y desarrollo de software.\cite{framework}
+\end{itemize}
+
+
+\section{Descripción general}
+\label{desc}
+
+\subsection{Restricciones}
+\label{restrictions}
+A las restricciones dadas (ver \href{run:../Enunciado.pdf}
+{\texttt{Enunciado.pdf}}) se le agregaron las siguientes:
+
+\begin{enumerate}[leftmargin=1.5cm]
+  \item El servidor en el que se instalen los servicios deben tener
+  instaladas las dependencias necesarias:
+
+  \begin{itemize}[leftmargin=1.5cm]
+    \item \emph{Ulfius library}\cite{ulfius}.
+    \item \emph{Nginx}\cite{nginx}.
+  \end{itemize}
+
+  \item El usuario con el cual que se ejecuten los servicios, \verb|usertp3|, ya
+  debe existir en el servidor. El \emph{Makefile} no se encarga de
+  crear dicho usuario.
+  \item El usuario mencionado en el ítem anterior debe tener permisos para
+  ejecutar el comando \verb|useradd| sin la petición de contraseña.
+  \item Debe existir el archivo \verb|/etc/.nginxpasswd|. Este archivo es el que
+  \emph{Nginx} utiliza para permitir el acceso a los servicios.
+  \item El ciente debe tener en \verb|/etc/hosts| la dirección IP del servidor
+  asociada al dominio \verb|tp3.com|.
+\end{enumerate}
+
+
+\subsection{Esquema del proyecto}
+\label{esq}
+
+El proyecto está dividido en las siguientes carpetas:
+
+\begin{itemize}[leftmargin=1.5cm]
+  \item \textbf{bin}: contiene los archivos ejecutables de los servicios.
+  \item \textbf{inc}: contiene el \emph{header `utilities.h'}, que contiene las
+  funciones útiles para los servicios: escribir el \emph{log} de eventos y la
+  obtención del \emph{timestamp}.
+  \item \textbf{config}: contiene los archivos de configuración para \emph{Nginx}
+  y los servicios para \emph{systemd}.
+  \item \textbf{src}: contiene los códigos fuente.
+
+  \begin{itemize}[leftmargin=1cm, nosep]
+    \item \emph{status\_service.c}: crea el servicio de estado en el puerto \verb|8081|.
+    \item \emph{users\_service.c}: crea el servicio de usuarios en el puerto \verb|8080|.
+    \item \emph{utilities.c}: implementa las funciones del \emph{utilities.h}.
+  \end{itemize}
+\end{itemize}
+
+\subsection{Requisitos futuros}
+\label{futurereq}
+
+\begin{itemize}[leftmargin=1.5cm]
+  \item Crear una página que consuma los datos devueltos por los servicios.
+\end{itemize}
+
+
+\section{Diseño de solución}
+\label{solucion}
+Como se mencionó en la sección anterior, se organizó el proyecto en varias
+carpetas (ver \textbf{\ref{esq}}).
+
+Se decidió crear dos archivos \verb|.c|, uno para cada servicio.
+``\emph{users\_service}'' se encargará de proveer los servicios de \verb|/api/users|
+y ``\emph{status\_service}'' proveerá los servicios de \\
+\verb|/api/servers/hardwareinfo|.
+
+Para realizar el archivo \emph{log}, se creó \verb|utilities.c|, que contiene la
+función para escribir el archivo y otras funcionalidades que sean compartidas
+entre los servicios.
+
+\subsection{\emph{Makefile}}
+\label{make}
+Las recetas disponibles en el \emph{Makefile} son las siguientes:
+
+\begin{enumerate}[leftmargin=1.5cm]
+  \item \emph{all}: genera el ejecutable del sistema.
+  \item \emph{check}: corre \emph{cppcheck} sobre el directorio
+  \verb|src|.
+  \item \emph{doc}: genera la documentación del código en HTML
+  utilizando \emph{doxygen} en la carpeta llamada \verb|Doc| y la
+  abre en el navegador \emph{Firefox}.\footnote{Si no se encuentra
+  instalado, se sugiere cambiar el navegador en la receta.}
+  \item \emph{install}: se encarga de copiar los archivos de configuración de
+  \emph{nginx} y de los servicios para \emph{systemd} a los directorios
+  correspondientes.
+  \item \emph{clean}: elimina los directorios \verb|bin| y
+  \verb|Doc|.
+\end{enumerate}
+
+
+\section{Implementación y resultados}
+\label{impres}
+
+\subsection{Servicios}
+\label{servicios}
+En un principio se utilizó el archivo \emph{helloworld} ofrecido por \emph{Ulfius}
+para comprender el funcionamiento del \emph{framework}.
+
+Posteriormente, se crearon los archivos mencionados en la sección anterior, uno
+para cada serivicio, con sus \emph{endpoints} correspondientes. Cada uno de
+éstos consistía simplemente en devolver un mensaje de tipo \emph{string} para
+corroborar el funcionamiento.
+
+\subsubsection{\emph{Users}}
+\label{users}
+Para obtener el listado de usuarios, se implementó la funcón \emph{get\_users()},
+que devuelve un objeto \emph{JSON} con la información de los usuarios.
+
+Esta función es utilizada en el \emph{callback\_users\_get}, que se
+ejecuta cada vez que el servicio recibe una \emph{request HTTP} mediante el
+método \emph{GET}.
+
+\begin{lstlisting}[caption={Función `\emph{get\_users()}'.}, label={get}, language=Ce]
+json_t *get_users()
+{
+  int users = 0;
+  json_t *json_users_object = json_object();
+  json_t *json_users_array  = json_array();
+
+  json_object_set_new(json_users_object, "data", json_users_array);
+
+  struct passwd *passwd_info = getpwent();
+
+  while(passwd_info)
+    {
+      users++;
+      json_t *json_array_data;
+      json_array_data = json_pack("{s:i, s:s}", "user_id", passwd_info->pw_uid,
+                                  "username", passwd_info->pw_name);
+
+      json_array_append(json_users_array, json_array_data);
+
+      passwd_info = getpwent();
+    }
+
+  endpwent();
+
+  syslog(LOG_NOTICE, "Usuarios listados: %d\n", users);
+  char msg[BUFF];
+  sprintf(msg, "Usuarios listados: %d\n", users);
+  write_log(get_date(), USER, msg);
+
+  return json_users_object;
+}
+\end{lstlisting}
+
+\newpage
+En cuanto al método para agregar un usuario nuevo, lo primero que se realiza al
+recibir una petición, es obtener un objeto \emph{JSON} de la misma y verificar
+que el formato es el correcto. De no serlo, se evnía una respuesta con código
+400 y una descripción ``\emph{Bad request}". Caso contrario, se revisa si el
+usuario ya existe en el sistema, sino existe, se lo crea y se devuelve la información.
+
+\begin{lstlisting}[caption={\emph{Endpoint /users, POST method.}}, label={post}, language=Ce]
+int callback_users_post(const struct _u_request * request,
+                        struct _u_response * response, void * user_data)
+{
+  json_t *json_request = ulfius_get_json_body_request(request, NULL);
+  json_t *body;
+
+  const char *user   = json_string_value(json_object_get(json_request, "username"));
+  const char *passwd = json_string_value(json_object_get(json_request, "password"));
+
+  if(user == NULL || passwd == NULL)
+    {
+      body = json_pack("{s:s}", "description", "Bad request");
+      ulfius_set_json_body_response(response, 400, body);
+      return U_CALLBACK_CONTINUE;
+    }
+
+  struct passwd *info = getpwnam(user);
+  if(info != NULL)
+    {
+      body = json_pack("{s:s}", "description", "El usuario ya existe");
+      ulfius_set_json_body_response(response, 409, body);
+      return U_CALLBACK_CONTINUE;
+    }
+
+  char cmd[BUFF];
+  sprintf(cmd, "sudo useradd %s -p $(openssl passwd -5 '%s')", user, passwd);
+  char *tmp = get_popen(cmd);
+  free(tmp);
+
+  char *timestamp = get_date();
+
+  struct passwd *passwd_info = getpwnam(user);
+
+  body = json_pack("{s:i, s:s, s:s}", "id", passwd_info->pw_uid,
+                   "username", user, "created_at", timestamp);
+
+  ulfius_set_json_body_response(response, 200, body);
+
+  syslog(LOG_NOTICE, "Usuario %d creado", passwd_info->pw_uid);
+
+  char msg[BUFF];
+  sprintf(msg,"Usuario %d creado\n", passwd_info->pw_uid);
+  write_log(timestamp, USER, msg);
+  free(timestamp);
+
+  return U_CALLBACK_CONTINUE;
+}
+\end{lstlisting}
+
+\subsubsection{\emph{Status}}
+\label{status}
+La obtención de los datos pedidos se guardan un una estructura llamada
+\emph{hwinfo}. Esta, a su vez, contiene un dato tipo \emph{upinfo}, que es otra
+estructura que contiene los datos que indican el tiempo transcurrido desde que
+se inició el sistema.
+
+\begin{lstlisting}[caption={Estructura `\emph{upinfo}'.}, label={up}, language=Ce]
+typedef struct uptime   /** Estructura para obtener el uptime. */
+{
+  int time; /** Uptime total en segundos. */
+  int h;    /** Horas de uptime. */
+  int min;  /** Minutos de uptime. */
+  int seg;  /** Segundos de uptime. */
+} upinfo;
+\end{lstlisting}
+
+\begin{lstlisting}[caption={Estructura `\emph{hwinfo}'.}, label={hwinfo}, language=Ce]
+typedef struct hardinfo /** Estructura para obtener la informacion del hardware. */
+{
+  char *kernelVersion; /** Version de kernel. */
+  char *processorName; /** Procesador. */
+  int totalCPUCore;    /** Cantidad de nucleos del procesador. */
+  int totalMemory;     /** Cantidad de memoria RAM total en MB. */
+  int freeMemory;      /** Cantidad de memoria RAM libre en MB. */
+  int diskTotal;       /** Capacidad del disco en GB. */
+  int diskFree;        /** Espacio libre del disco en GB. */
+  float loadAvg;       /** Carga promedio del sistema en 1 minuto. */
+  upinfo uptime;       /** Cuanto tiempo hace que se inicio el sistema. */
+} hwinfo;
+\end{lstlisting}
+
+La función `\emph{get\_hwinfo}' se encarga de completar estas estructuras, que
+son utilizados en la función \emph{callback\_status}, donde se arma un objeto
+\emph{JSON} con esta estructura.
+
+\begin{lstlisting}[caption={Función `\emph{get\_hwinfo}'.}, label={gethw}, language=Ce]
+void get_hwinfo(hwinfo *hard)
+{
+  hard->kernelVersion = get_popen("uname -r");
+
+  char *tmp = get_popen("cat /proc/loadavg");
+  sscanf(tmp, "%f", &hard->loadAvg);
+
+  tmp = get_popen("cat /proc/uptime");
+  sscanf(tmp, "%d", &hard->uptime.time);
+
+  hard->uptime.h   = hard->uptime.time/60/60%24;
+  hard->uptime.min = hard->uptime.time/60%60;
+  hard->uptime.seg = hard->uptime.time%60;
+
+  tmp = get_popen("free --mega | grep Mem");
+  sscanf(tmp, "%*s %d %*d %d", &hard->totalMemory, &hard->freeMemory);
+
+  tmp = get_popen("lscpu | grep name");
+  tmp = remove_spaces(tmp);
+  hard->processorName = tmp;
+
+  tmp = get_popen("lscpu | grep socket");
+  tmp = remove_spaces(tmp);
+  sscanf(tmp, "%d", &hard->totalCPUCore);
+
+  tmp = get_popen("df . | grep /");
+  sscanf(tmp, "%*s %d %*d %d", &hard->diskTotal, &hard->diskFree);
+  hard->diskTotal /= 1024000;
+  hard->diskFree /= 1024000;
+
+  free(tmp);
+}
+\end{lstlisting}
+
+\subsection{\emph{Nginx}}
+\label{secnginx}
+Para la configuración de \emph{nginx}, se siguió la documentación provista por
+los desarrolladores\cite{ndoc}, creando un archivo en el directorio
+\verb|/etc/nginx/sites-available| llamado \verb|tp3so2|.
+
+\begin{lstlisting}[caption={Configuración del sitio \texttt{tp3.com.}}, label={tp3}]
+server {
+        listen :80;
+
+        server_name tp3.com;
+
+        auth_basic           "TP3 Area";
+        auth_basic_user_file /etc/.nginxpasswd;
+
+        location /api/users {
+                proxy_pass http://localhost:8080/users;
+        }
+
+        location /api/servers/hardwareinfo {
+                proxy_pass http://localhost:8081/hardwareinfo;
+                proxy_set_header X-Real-IP $remote_addr;
+        }
+}
+\end{lstlisting}
+
+El Código \textbf{\ref{tp3}} establece el nombre del servidor, el nombre del
+área protegida a la cual únicamente los usuarios registrados en
+\verb|/etc/.nginxpasswd| tienen acceso y los \emph{locations} del servidor.
+
+\newpage
+\subsection{\emph{systemd}}
+\label{secsystemd}
+Por último, con \emph{nginx} y los binarios de los servicios funcionando
+correctamente se procedió a crear los archivos necesarios para habilitarlos como
+servicios. El archivo \verb|.service| tiene la siguiente forma:
+
+\begin{lstlisting}[caption={Estructura del servicio.}, label={service}]
+[Unit]
+Description=[Descripcion del servicio]
+Requires=nginx.service
+After=nginx.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/[ejecutable_servicio]
+User=usertp3
+
+[Install]
+WantedBy=multi-user.target
+\end{lstlisting}
+
+Los dos archivos correspondientes a los servicios se ubican en el directorio
+\verb|/etc/systemd/system/|.
+
+Además del \emph{log} que se pidió, se realiza un \emph{log} en \emph{journal}
+mediante la función \emph{syslog()}. Esto se realizó para obtener tener una
+copia en otro directorio del sistema, \verb|/var/log/| y cumplir con el formato
+requerido por la cátedra.
+
+\subsection{Resultados}
+\label{results}
+El sistema se encuentra corriendo en una \emph{Raspberry Pi 3B+} conectada a la
+misma red WiFi.
+
+La siguiente figura muestra el resultado de las pruebas implementadas en
+\emph{Postman}.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[scale=0.4]{results.png}
+  \caption{Resultados de los \emph{tests} en \emph{Postman}.}
+  \label{postman}
+\end{figure}
+
+Como se puede ver, el tiempo menor a 200ms de requerimiento para el método de
+agregar un usuario nuevo no se cumple. Se realizaron varios cambios en la
+implementación y el tiempo mínimo que se pudo lograr fue de 300ms.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[scale=0.8]{hwinfo.png}
+  \caption{Información del hardware del servidor.}
+  \label{raspinfo}
+\end{figure}
+
+La Fig. \textbf{\ref{raspinfo}} muestra el resultado de la consulta a
+\emph{hardwareinfo}. Los valores correspondientes a la memoria se muestran en
+[MB] y los valores de disco en [GB].
+
+\section{Conclusiones}
+\label{conc}
+El trabajo práctico no fue complicado de implementar, a diferencia de los
+anteriores.
+
+El único requerimiento que no se pudo cumplir es el del tiempo de respuesta de
+la solicitud para agregar el usuario, que puede deberse tanto a detalles de la
+implementación como de la latencia en la red.
+
+
+\begin{thebibliography}{9}
+\bibitem{restful}
+\emph{Wikipedia, REST},
+\\\texttt{\href{https://en.wikipedia.org/wiki/Representational_state_transfer}{Link to Wikipedia}}
+
+\bibitem{framework}
+\emph{Wikipedia, Framework},
+\\\texttt{\href{https://en.wikipedia.org/wiki/Software_framework}{Link to Wikipedia}}
+
+\bibitem{ulfius}
+\emph{Github, Ulfius},
+\\\texttt{\href{https://github.com/babelouest/ulfius}{Link to Ulfius}}
+
+\bibitem{nginx}
+\emph{Nginx},
+\\\texttt{\href{https://nginx.org/en/}{Link to Nginx}}
+
+\bibitem{ndoc}
+\emph{Nginx, Documentation},
+\\\texttt{\href{https://docs.nginx.com/}{Link to Nginx documentation}}
+
+\end{thebibliography}
+\end{document}

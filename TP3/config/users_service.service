@@ -1,0 +1,12 @@
+[Unit]
+Description=Servicio para listar y agregar usuarios al sistema
+Requires=nginx.service
+After=nginx.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/users_service
+User=usertp3
+
+[Install]
+WantedBy=multi-user.target

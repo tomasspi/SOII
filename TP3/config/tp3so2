@@ -1,0 +1,17 @@
+server {
+        listen 80;
+
+        server_name tp3.com;
+
+        auth_basic           "TP3 Area";
+        auth_basic_user_file /etc/.nginxpasswd;
+
+        location /api/users {
+                proxy_pass http://localhost:8080/users;
+        }
+
+        location /api/servers/hardwareinfo {
+                proxy_pass http://localhost:8081/hardwareinfo;
+                proxy_set_header X-Real-IP $remote_addr;
+        }
+}
