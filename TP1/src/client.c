@@ -174,7 +174,6 @@ void ask_login(char buf[STR_LEN])
  */
 void show_prompt(int32_t sockfd, ssize_t rw, char buffer[STR_LEN], char ip[STR_LEN])
 {
-  prompt:
 
   while(1)
     {
@@ -187,7 +186,7 @@ void show_prompt(int32_t sockfd, ssize_t rw, char buffer[STR_LEN], char ip[STR_L
       buffer[strlen(buffer)-1] = '\0';
 
       if(buffer[0] == '\0')
-        goto prompt;
+        continue;
 
   		rw = send_cmd(sockfd, buffer);
       check_error((int) rw);
