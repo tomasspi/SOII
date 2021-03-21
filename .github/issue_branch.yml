@@ -1,0 +1,3 @@
+branches:
+  - label: documentation
+    skip: true
