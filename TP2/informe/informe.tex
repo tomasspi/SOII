@@ -39,10 +39,13 @@
 \usepackage{listings} % Para poner código
 \usepackage{enumitem} % Para editar las propiedades de los items
 \lstset{frame=single} % Código en un cuadro
+\definecolor{negrou}{gray}{0.15} % Color gris para el fondo de las terminales
+\lstset{basicstyle=\color{white}, backgroundcolor=\color{negrou}} % Código en un cuadro
 % --- Para Anexo
 \addto\captionsspanish{%
   \renewcommand\appendixname{ANEXO}
   \renewcommand\appendixpagename{ANEXOS}
+  \renewcommand\tablename{Tabla}
 }
 % --- Quita los cuadrados de colores en los hipervínculos
 \hypersetup{
@@ -73,6 +76,29 @@
   showtabs=false,
   tabsize=2,
   language=C
+}
+
+\lstdefinelanguage{mperl}
+{
+  backgroundcolor=\color{white},
+  commentstyle=\color{CadetBlue},
+  keywordstyle=\bfseries\color{Plum},
+  identifierstyle=\color{MidnightBlue},
+  stringstyle=\color{OliveGreen},
+  numberstyle=\tiny\color{ForestGreen},
+  numbers=left,
+  numbersep=5pt,
+  basicstyle=\ttfamily\footnotesize,
+  alsoletter={\%},
+  breakatwhitespace=false,
+  breaklines=true,
+  frame=single,
+  rulecolor=\color{black},
+  showspaces=false,
+  showstringspaces=false,
+  showtabs=false,
+  tabsize=2,
+  language=Perl
 }
 
 \renewcommand{\lstlistingname}{Código}
@@ -110,7 +136,7 @@
 % -------------------------------------------------------- %
 % --- Tabla de contenidos
 
-\setcounter{secnumdepth}{1}
+\setcounter{secnumdepth}{3}
 \setcounter{tocdepth}{5}
 \tableofcontents
 
@@ -134,12 +160,15 @@ una imagen \emph{BMP}.
 \label{daa}
 
 \begin{itemize}
+  \item \emph{BMP}: \emph{Bitmap}. Formato de imagen capaz de almacenar
+  imágenes bidimensionales tanto en color como monocromático.\cite{bmpfor}
   \item \emph{API}: \emph{Application Programming Interface}. Es un conjunto
   de funciones ofrecidas para ser utilizadas por otro software.
-  \item \emph{IPC}: \emph{Inter-Process Communication}. Mecanismo del Sistema
-  Operativo que permite a los procesos comunicarse y sincronizarse entre sí.
-  \item \emph{TCP/IP}: conjunto de protocolos que posibilitan las comunicaciones
-  de Internet.
+  \item Nodo: computadora individual que forma parte de un \emph{cluster}.
+  \item \emph{Cluster}: conjunto de nodos unidos entre sí que se comportan
+  como una única computadora.
+  \item \emph{OpenMP}: \emph{Open Multi-Processing}. Es una API para programación
+  multiprocesos de memoria compartida.\cite{omp}
 \end{itemize}
 
 
@@ -152,16 +181,12 @@ A las restricciones dadas (ver \href{run:../Enunciado.pdf}
 {\texttt{Enunciado.pdf}}) se le agregaron las siguientes:
 
 \begin{enumerate}[leftmargin=1.5cm]
-  \item El usuario y contraseña no pueden ser los mismos.
-  \item El comando para descargar la imagen debe tener el
-  siguiente formato:
+  \item La imagen a filtrar debe estar ubicada en la carpeta \verb|imgs|.
+  \item Para ejecutar el programa se debe ingresar desde la carpeta \verb|bin|:
 
   \begin{center}
-    \verb|file down `nombre_imagen' `directorio_usb'|
+    \verb|./main `nombre_imagen' `radio' `cantidad_hilos'|
   \end{center}
-
-  \item Las imágenes para descargar deben estar ubicadas en la
-  carpeta \verb|imgs|.
 \end{enumerate}
 
 
@@ -171,65 +196,181 @@ A las restricciones dadas (ver \href{run:../Enunciado.pdf}
 El proyecto está dividido en las siguientes carpetas:
 
 \begin{itemize}[leftmargin=1.5cm]
-  \item \textbf{bin}: contiene los archivos ejecutables.
-  \item \textbf{inc}: contiene los \emph{headers} utilizados por los
-  códigos fuente:
+  \item \textbf{bin}: contiene el archivo ejecutable.
+  \item \textbf{inc}: contiene los \emph{headers} utilizados por el
+  código fuente:
 
   \begin{itemize}[leftmargin=1cm, nosep]
-    \item \emph{messages.h}: \emph{header} con los datos para el
-    envío y recepción de mensajes entre los procesos que conforman
-    el servidor.
-    \item \emph{sockets.h}: \emph{header} con los datos y funciones
-    para la utilización de los \emph{sockets}: su creación y su
-    lectura/escritura.
+    \item \emph{simple\_bmp.h}: \emph{header} para la carga, lectura y
+    escritura de las imágenes \emph{BMP}.
   \end{itemize}
 
-  \item \textbf{imgs}: contiene las imágenes disponibles para descargar.
-  \item \textbf{res}: contiene la base de datos de los usuarios.
+  \item \textbf{imgs}: contiene la imagen a la que se aplican los filtros y
+  el resultado de su aplicación.
   \item \textbf{src}: contiene los códigos fuente.
 
   \begin{itemize}[leftmargin=1cm, nosep]
-    \item \emph{client.c}
-    \item \emph{primary\_server.c}
-    \item \emph{auth\_service.c}
-    \item \emph{files\_service.c}
-    \item \emph{sockets.c}
+    \item \emph{main.c}: realiza la aplicación de los filtros a la imagen de
+    entrada.
+    \item \emph{simple\_bmp.c}: contiene la implementación de las funciones de
+    \emph{simple\_bmp.h}.
   \end{itemize}
-
 \end{itemize}
 
 \subsection{Requisitos futuros}
 \label{futurereq}
 
 \begin{itemize}[leftmargin=1.5cm]
-  \item Utilizar \emph{CMake} para lograr la compilación curzada.
-  \item Hacer uso de la \emph{API} de \emph{MySQL} para la base de datos.
-  \item Exigir una longitud determinada de caracteres para usuario y contraseña.
-  \item Permitir el registro de un nuevo usuario en la base de datos.
+  \item Utilizar alguno de los métodos conocidos para el tratamiento de los
+  bordes de la imagen.
+  \item Soportar más de dos filtros de imagen.
 \end{itemize}
 
-% \newpage
+
 \section{Diseño de solución}
 \label{solucion}
+Como se mencionó en la sección anterior, se organizó el proyecto en varias
+carpetas (ver \textbf{\ref{esq}}).
 
+Luego, se decidió por separar la aplicación de los filtros en dos funciones
+distintas para una mejor legibilidad del código.
+Por lo tanto, se creará una función que determine la posición del píxel
+respecto al centro de la imagen y en función del resultado aplique el filtro
+correspondiente.
 
+En el caso de que el píxel corresponda a alguno de los bordes de la imagen,
+no será modificado.
+
+Los parámetros correspondientes a los filtros se establecen en el momento de
+compilación, para evitar una pérdida de tiempo en la obtención de los
+parámetros en el momento de la ejecución. Los parámetros con
+los que se realizaron las ejecuciones son los siguientes:
+
+\begin{itemize}[leftmargin=1.5cm]
+  \item Brillo (\emph{L}): 1.8
+  \item Contraste (\emph{K}): 15
+  \item Radio (\emph{R}): 500 [px]
+  \item Tamaño de kernel (\emph{SIZE\_K}): 45
+\end{itemize}
+
+\subsection{Profilers}
+\label{prof}
+Un \emph{profiler} es un \emph{software} que realiza un análisis sobre el
+comportamiento de un determinado programa mediante la información obtenida
+durante la ejecución del mismo.
+Este tipo de herramienta es utilizado para depurar y optimizar los algoritmos
+utilizados en el programa.
+
+A continuación se muestran las herramientas de \emph{profiling} para analizar
+la \emph{performance} del programa realizado.
+
+\subsubsection{perf}
+\label{perf}
+Es una herramienta disponible para \emph{Linux} a partir de la version de
+kernel \verb|2.6.31| (2009).
+
+Soporta contadores de rendimiento tanto de \emph{hardware} como \emph{software},
+puntos de rastreao y sondas dinámicas.
+\newpage
+Algunos de las opciones de ejecución son las siguientes:
+
+\begin{itemize}[leftmargin=1.5cm]
+  \item \emph{stat}: mide el recuento total de eventos.
+  \item \emph{record}: mide y guarda los datos de muestreo.
+  \item \emph{report}: analiza archivo generado por registro perf. Puede generar
+  un \emph{profile} plano o un grafo de llamadas.
+  \item \emph{sched}: seguimiento/medición de las acciones y latencias del
+  \emph{scheduler}.
+\end{itemize}
+
+Para ejecutar \emph{perf} se debe realizar lo siguiente:
+
+\begin{lstlisting}[breaklines,language=bash,basicstyle=\ttfamily\color{white}]
+  $ sudo perf stat ./main `nombre_imagen' `radio' `cantidad_hilos'
+\end{lstlisting}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[scale=0.5]{perf.png}
+  \caption{Resultado de \emph{perf stat}.}
+  \label{outp}
+\end{figure}
+
+\subsubsection{gprof}
+\label{gprof}
+Es la mejora de \emph{perf}. Para poder utilizarla, el programa a analizar
+debe compilarse con la opción \verb|-pg|, que genera archivo con un grafo de
+llamadas (\emph{default} \verb|gmon.out|). Este archivo es leído por \emph{gprof}
+y calcula los tiempos de cada función utilizada.
+
+Para hacer un análisis con \emph{gprof} se deben ejecutar los siguientes comandos:
+
+\begin{lstlisting}[breaklines,language=bash,basicstyle=\ttfamily\color{white}]
+ $ ./main.o `nombre_imagen' `radio' `cantidad_hilos'
+ $ gprof ./main.o gmon.out
+\end{lstlisting}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[scale=0.5]{flat.png}
+  \caption{Salida plana de \emph{gprof}.}
+  \label{goutf}
+\end{figure}
+
+Véase que la Figura \textbf{\ref{goutf}} indica que el 99.61\% del tiempo
+de ejecución del programa pertenece a la función \emph{`blur\_filter'} (ver
+\textbf{\ref{blur}}), por lo que se utilizará \emph{OpenMP} en la función
+\emph{`apply\_filters'}.
+
+\subsubsection{\emph{Valgrind}}
+\label{valgrind}
+Es un conjunto de herramientas que se utilizan para depurar problemas de
+memoria y rendimiento de un programa.
+Algunas de estas herramientas son:
+
+\begin{itemize}[leftmargin=1.5cm, itemsep=1pt]
+  \item \emph{memcheck}: realiza un seguimiento del uso de la memoria.
+  \item \emph{cachegrind}: mide el rendimiento de la caché durante la ejecución.
+  \item \emph{helgrind}: detecta las condiciones de carrera en un código multihilo.
+\end{itemize}
+
+Con \emph{Valgrind}, el programa a \emph{testear} se ejecuta entre cinco y veinte
+veces más lento, por lo que es ralmente importante tenerlo en cuenta al momento
+de su uso.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[scale=0.5]{valgrind.png}
+  \caption{Resultado de \emph{valgrind} con la herramienta \emph{cachegrind}.}
+  \label{cachegrind}
+\end{figure}
+
+\subsubsection{\emph{V-Tune}}
+\label{vtune}
+Es desarrollado por Intel. Puede utilizarse con una interfaz gráfica o por medio de
+la línea de comandos. Los comandos soportados pueden verse en el siguiente enlace:
+\href{https://software.intel.com/content/www/us/en/develop/documentation/vtune-help/top.html}
+{\emph{user guide}}.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[scale=0.5]{hotspot.png}
+  \caption{Resultado de \emph{vtune} con la herramienta \emph{hotspots}.}
+  \label{hotspot}
+\end{figure}
 
 \subsection{\emph{Makefile}}
 \label{make}
 Las recetas disponibles en el \emph{Makefile} son las siguientes:
 
-\begin{enumerate}
-  \item \emph{all}: genera los ejecutables del sistema.
+\begin{enumerate}[leftmargin=1.5cm]
+  \item \emph{all}: genera el ejecutable del sistema.
   \item \emph{check}: corre \emph{cppcheck} sobre el directorio
   \verb|src|.
   \item \emph{doc}: genera la documentación del código en HTML
   utilizando \emph{doxygen} en la carpeta llamada \verb|Doc| y la
-  abre en el navegador  \emph{Firefox}.\footnote{Si no se encuentra
+  abre en el navegador \emph{Firefox}.\footnote{Si no se encuentra
   instalado, se sugiere cambiar el navegador en la receta.}
-  \item \emph{client}: crea el directorio \verb|bin| y genera el
-  ejecutable correspondiente al cliente.
-  \item \emph{server}: general los ejecutables correspondientes al
-  servidor.
   \item \emph{clean}: elimina los directorios \verb|bin| y
   \verb|Doc|.
 \end{enumerate}
@@ -237,125 +378,374 @@ Las recetas disponibles en el \emph{Makefile} son las siguientes:
 
 \section{Implementación y resultados}
 \label{impres}
+En las siguientes subsecciones se explicarán las funciones encargadas de aplicar
+los filtros y luego los resultados obtenidos con distintas configuraciones.
 
-\subsection{\emph{Sockets}}
-El método de comunicación de \emph{sockets} es utilizado por tres
-procesos: \emph{client}, \emph{server} y \emph{fileserv}, por lo
-que se decidió realizar un \emph{header} con las funciones que se
-utilizan para la creación de los \emph{sockets} y su lectura/
-escritura.
+Para reducir los tiempos se declararon ambas imágenes (de entrada y salida) a
+nivel global, evitando una sobrecarga en la pila y logrando un acceso más rápido
+a estas dos variables\cite{global}.
 
-\newpage
+\subsection{Aplicación de los filtros}
 
-A continuación se muestra brevemente el contenido del \emph{header}.
+\begin{lstlisting}[caption={Función `\emph{apply\_filters}'.}, label={apply}, language=Ce]
+int32_t distancia = 0;
+int32_t distancia_y = 0;
+int32_t radio_cuadrado = r*r;
 
-\begin{lstlisting}[caption={\emph{Header} para el uso de \emph{sockets}.}, label={socket}, language=Ce]
-enum ports        /** Puertos para la conexion de los sockets. */
+uint16_t **kernel = calloc(SIZE_K, sizeof (int *));
+
+for(int k = 0; k < SIZE_K; k++)
+  kernel[k] = calloc(SIZE_K, sizeof (uint16_t));
+
+kernel_setup(kernel, SIZE_K);
+
+uint16_t norm = get_norm(kernel, SIZE_K);
+int32_t offset = (int32_t) ((SIZE_K-1) / 2);
+
+double start = omp_get_wtime();
+
+#pragma omp parallel num_threads(threads)
+#pragma omp for schedule(dynamic)
+for (int32_t y = offset; y < in.info.image_height-offset; y++)
 {
-  port_ps = 4444, /** Puerto para `primary_server'. */
-  port_fi = 5555  /** Puerto para `files_service'. */
-};
+  distancia_y = (y - c.pos_y)*(y - c.pos_y);
 
-#define STR_LEN 1024  /** Largo de los strings */
+  for (int32_t x = offset; x < in.info.image_width-offset; x++)
+  {
+    distancia = (x - c.pos_x)*(x - c.pos_x) + distancia_y;
 
-/** Escribe en el socket deseado un mensaje. */
-ssize_t send_cmd(int sockfd, void *cmd);
+    if(distancia <= radio_cuadrado) /** Inside circle */
+      out.data[y][x] = lineal_filter(in.data[y][x]);
+    else /* Outside circle */
+      out.data[y][x] = blur_filter(x, y, kernel, norm);
+  }
+}
 
-/** Lee el mensaje del socket deseado. */
-ssize_t recv_cmd(int sockfd, void *cmd);
-
-/** Crea el socket en el puerto pedido. */
-int create_svsocket(char *ip, uint16_t port);
-
-/** Conecta al cliente en el puerto del servidor. */
-int create_clsocket(char *ip, uint16_t port);
+printf("\n-- Tiempo transcurrido (%d hilos): %f --\n\n", threads,
+       omp_get_wtime() - start);
 \end{lstlisting}
 
-\subsection{Mensajes}
+El Código \textbf{\ref{apply}} muestra la implementación de la función que
+aplica ambos filtros en la imagen. Dicha función recorre la imagen por filas y
+determina si el píxel está o no dentro de la circunferencia de radio especificado.
+En caso de estar dentro, se aplica el filtro lineal, sino se aplica el de
+desenfoque.
+
+
+\subsubsection{Filtro lineal}
 \label{msg_h}
-Como se explicó en la subsección \ref{ipc}, se utiliza una cola de mensajes
-entre los tres procesos que conforman el servidor, por lo que dichos procesos
-utilizan una librería en común: \emph{messages.h}.
 
-\begin{lstlisting}[caption={\emph{Header} para el uso de la cola de mensajes.}, label={msgql}, language=Ce]
-#define STR_LEN 1024 /**< Largo de los strings */
+\begin{lstlisting}[caption={Función `\emph{lineal\_filter}'.}, label={lineal}, language=Ce]
+int32_t r, g, b;
+r = pixel.red;
+g = pixel.green;
+b = pixel.blue;
 
-/* Enum con con los destinos de los mensajes a enviar en la cola de mensajes. */
-enum msg_ID
-{
-  to_auth = 1, /* Destinado a `auth_service'. */
-  to_file = 2, /* Destinado a `files_service'. */
-  to_prim = 3  /* Destinado a `primary_server'. */
-};
+r = (int32_t) (r * K) + L;
+r = normalize_pixel_color(r);
 
-/* Enum con los estados posibles del usuario. */
-enum status
-{
-  blocked = 1, /* El usuario esta bloqueado. */
-  active  = 2, /* El usuario esta activo. */
-  invalid = 3, /* Credenciales invalidas. */
-  not_reg = 4  /* Es usuario no existe. */
-};
+g = (int32_t) (g * K) + L;
+g = normalize_pixel_color(g);
 
-#define QU_PATH  "./server" /* Archivo para crear la cola de mensajes. */
+b = (int32_t) (b * K) + L;
+b = normalize_pixel_color(b);
+
+pixel = (sbmp_raw_data) { (uint8_t) b, (uint8_t) g, (uint8_t) r};
+
+return pixel;
 \end{lstlisting}
 
-En este \emph{header} también se encuentra incluida la estructura de mensaje
-mostrada en el Código \ref{msg}.
+El Código \textbf{\ref{lineal}} muestra la implementación de la función
+encargada de aplicar el filtro lineal dentro de la circunferencia dada. Esta
+función toma cada uno de los colores del píxel, los modifica según los valores
+de brillo y contraste dados, y devuelve el píxel modificado.
+
+\subsubsection{Filtro de desenfoque}
+\label{blurf}
+
+\begin{lstlisting}[caption={Función `\emph{blur\_filter}'.}, label={blur}, language=Ce]
+int32_t sum_r = 0;
+int32_t sum_g = 0;
+int32_t sum_b = 0;
+int32_t offset = (int32_t) ((SIZE_K-1) / 2);
+
+for (int32_t m = -offset; m <= offset; m++)
+  {
+    for (int32_t n = -offset; n <= offset; n++)
+      {
+        sum_r += (int32_t) (kernel[m+offset][n+offset] * in.data[y+m][x+n].red);
+        sum_g += (int32_t) (kernel[m+offset][n+offset] * in.data[y+m][x+n].green);
+        sum_b += (int32_t) (kernel[m+offset][n+offset] * in.data[y+m][x+n].blue);
+      }
+  }
+sum_r = (int32_t) (sum_r / norm);
+sum_g = (int32_t) (sum_g / norm);
+sum_b = (int32_t) (sum_b / norm);
+
+return (sbmp_raw_data) {(uint8_t) sum_b, (uint8_t) sum_g, (uint8_t) sum_r};
+\end{lstlisting}
+
+El Código \textbf{\ref{blur}} muestra la implementación de la función
+encargada de aplicar el filtro de desenfoque fuera de la circunferencia dada.
+Simplemente realiza la convolución entre la matriz kernel y la imagen de entrada,
+una vez por cada color, los normaliza y los devuelve en el nuevo píxel.
+
 
 \subsection{Resultados}
 \label{resultados}
-A continuación se muestran los resultados obtenidos al correr el programa con
-los comandos requeridos. Las figuras que muestran el listado de usuarios e
-imágenes disponibles fueron sacadas conectado cliente y servidor a la dirección
-\emph{loopback} (\verb|127.0.0.1|), mientras que la descarga de imágenes son de
-un cliente desde una \emph{Raspberry Pi} con dirección IP \verb|192.168.0.177|.
+
+\subsubsection{Filtrado}
+\label{filtrado}
+A continuación se muestran los resultados de la modificación de la imagen dada
+y dos a elección del estudiante con los parámetros mencionados la
+sección \textbf{\ref{solucion}}.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=10cm]{in1.png}
+  \caption{Imagen de entrada.}
+  \label{input}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=10cm]{out1.png}
+  \caption{Imagen de salida.}
+  \label{output}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=10cm]{in2.png}
+  \caption{Imagen de entrada.}
+  \label{input1}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=10cm]{out2.png}
+  \caption{Imagen de salida.}
+  \label{output1}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=10cm]{in3.png}
+  \caption{Imagen de entrada.}
+  \label{input2}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=10cm]{out3.png}
+  \caption{Imagen de salida.}
+  \label{output2}
+\end{figure}
+
+\subsubsection{Medición de tiempos}
+\label{tiempos}
+Para medir los tiempos de ejecución se realizó un \emph{script} en \emph{pearl}.
+
+\begin{lstlisting}[caption={\emph{Script} de ejecución.}, label={script}, language=mperl]
+#!/usr/bin/perl
+
+use Time::HiRes qw[time];
+
+$M = 1;
+$muestras = $M;
+$pot = 0;
+$hilos = 1;
+$max_hilos = 16;
+$radio = 100;
+
+while($hilos <= $max_hilos)
+{
+	while($muestras > 0)
+	{
+		$cmd = "./main base.bmp $radio $hilos";
+		system($cmd);
+		$muestras--;
+	}
+	$muestras = $M;
+	$pot++;
+    $hilos = 2**$pot;
+}
+
+print("DONE.\n");
+\end{lstlisting}
+
+El Código \textbf{\ref{script}} muestra dicho \emph{script}, que realiza una
+determinada cantidad de muestras para una cantidad de hilos que varía en
+potencias de 2 hasta alcanzar una cantidad total de 64.
+
+Este \emph{script} se ejecuta tanto en la PC local como en un nodo del
+\emph{cluster} de la Facultad, \emph{Wayra}.
+Dicho nodo tiene un procesador \verb|Intel Xeon E5-2630 v4|
+\footnote{Para información detallada del procesador, dirigirse
+\href{https://ark.intel.com/content/www/es/es/ark/products/92981/intel-xeon-processor-e5-2630-v4-25m-cache-2-20-ghz.html}
+{aquí}.}, con las siguientes características:
+
+\begin{itemize}[leftmargin=1.5cm, itemsep=1pt]
+  \item \emph{CPU(s)}: 20
+  \item \emph{Thread(s) per core}: 2
+  \item \emph{Core(s) per socket}: 10
+  \item \emph{Socket(s)}: 1
+  \item \emph{CPU MHz}: 1200.221
+  \item \emph{L1d cache}: 320 KiB
+  \item \emph{L1i cache}: 320 KiB
+  \item \emph{L2 cache}: 2.5 MiB
+  \item \emph{L3 cache}: 25 MiB
+\end{itemize}
+
+La PC local tiene un \verb|Intel Core i7-7500U| con estas características:
+
+\begin{itemize}[leftmargin=1.5cm, itemsep=1pt]
+  \item \emph{CPU(s)}: 4
+  \item \emph{Thread(s) per core}: 2
+  \item \emph{Core(s) per socket}: 2
+  \item \emph{Socket(s)}: 1
+  \item \emph{CPU MHz}: 523.441
+  \item \emph{L1d cache}: 32K
+  \item \emph{L1i cache}: 32K
+  \item \emph{L2 cache}: 256K
+  \item \emph{L3 cache}: 4096K
+\end{itemize}
+
+Se probó en ambos lados con y sin el \emph{flag} de compilación \verb|-march=native|.
+Esta bandera de compilación indica al compilador que habilite todos los
+subconjuntos de instrucciones soportadas por la arquitectura nativa, lo cual
+produce un código optimizado, pero únicamente para la máquina en la que se está
+compilando el programa.
+
+Seguidamente se muestran tablas con los resultados de las ejecuciones con y sin
+la bandera tanto en el nodo como en la PC local.
+Estas tablas contienen la cantidad de hilos con que se ejecutó el programa, el
+tiempo que duró su ejecución y un factor de escala, que indica cómo va
+escalando el tiempo de acuerdo a la cantidad de hilos utilizados.
+
+\begin{table}[H]
+  \centering
+  \begin{tabular}{|| c | c | c ||} \hline
+    Cantidad de hilos & Tiempo {[}s{]} & \emph{Scale Factor} \\ \hline
+    1                 & 67.74          & -- \\ \hline
+    2                 & 36.26          & 1.87   \\ \hline
+    4                 & 19.98          & 3.39   \\ \hline
+    8                 & 11.69          & 5.79   \\ \hline
+    16                & 9.81           & 6.91   \\ \hline
+    20                & 9.10           & \textcolor{OliveGreen}{7.44} \\ \hline
+    32                & 9.14           & \textcolor{Red}{7.41}   \\ \hline
+    64                & 8.95           & 7.57   \\ \hline
+  \end{tabular}
+  \caption{Duración del programa \textbf{sin} el \emph{flag} en el \emph{cluster}.}
+  \label{test1n}
+\end{table}
 
 
+\begin{table}[H]
+  \centering
+  \begin{tabular}{|| c | c | c ||} \hline
+    Cantidad de hilos & Tiempo {[}s{]} & \emph{Scale Factor}\\ \hline
+    1                 & 47.76          & -- \\ \hline
+    2                 & 25.14          & 1.90   \\ \hline
+    4                 & 14.08          & 3.39   \\ \hline
+    8                 & 8.14           & 5.87   \\ \hline
+    16                & 6.48           & 7.37   \\ \hline
+    20                & 5.90           & \textcolor{OliveGreen}{8.09}   \\ \hline
+    32                & 5.95           & \textcolor{Red}{8.03}   \\ \hline
+    64                & 6.01           & \textcolor{Red}{7.95}   \\ \hline
+  \end{tabular}
+  \caption{Duración del programa \textbf{con} el \emph{flag} en el \emph{cluster}.}
+  \label{test2n}
+\end{table}
+
+
+\begin{table}[H]
+  \centering
+  \begin{tabular}{|| c | c | c ||} \hline
+    Cantidad de hilos & Tiempo {[}s{]} & \emph{Scale Factor}\\ \hline
+    1                 & 72.15          & -- \\ \hline
+    2                 & 47.34          & 1.52   \\ \hline
+    4                 & 45.76          & 1.58   \\ \hline
+    8                 & 41.10          & \textcolor{OliveGreen}{1.76}   \\ \hline
+    16                & 41.07          & \textcolor{Red}{1.76}   \\ \hline
+    32                & 40.82          & 1.77   \\ \hline
+    64                & 41.72          & \textcolor{Red}{1.73}   \\ \hline
+  \end{tabular}
+  \caption{Duración del programa \textbf{sin} el \emph{flag} en la PC.}
+  \label{test1p}
+\end{table}
+
+
+\begin{table}[H]
+  \centering
+  \begin{tabular}{|| c | c | c ||} \hline
+    Cantidad de hilos & Tiempo {[}s{]} & \emph{Scale Factor}\\ \hline
+    1                 & 41.54          & -- \\ \hline
+    2                 & 23.66          & 1.75   \\ \hline
+    4                 & 19.93          & 2.08   \\ \hline
+    8                 & 19.83          & \textcolor{OliveGreen}{2.09}   \\ \hline
+    16                & 19.86          & \textcolor{Red}{2.09}   \\ \hline
+    32                & 19.90          & \textcolor{Red}{2.09}   \\ \hline
+    64                & 19.87          & \textcolor{Red}{2.09}   \\ \hline
+  \end{tabular}
+  \caption{Duración del programa \textbf{con} el \emph{flag} en la PC.}
+  \label{test2p}
+\end{table}
+
+\subsubsection{Análisis de los tiempos}
+\label{analisis}
+Viendo los los resultados de las tablas anteriores, se nota claramente que al
+utilizar la bandera de compilación \verb|-march=native|, mejoran notablemente
+los tiempos de ejecución y el factor de escala, ya que en las tablas
+\textbf{\ref{test2n}} y \textbf{\ref{test2p}} los factores de escala se
+comportan de manera adecuada, es decir, las ejecuciones con una cantidad de
+hilos mayor a los físicos, causan tiempos de ejecución mayores debido a que se
+realizan más ciclos de reloj a causa de los cambios de contexto y sincronización
+de las caché.
+
+En las tablas \textbf{\ref{test1n}} y \textbf{\ref{test1p}}, sin embargo, lo
+dicho anteriormente no ocurre. En el caso del nodo cuando se realiza una
+ejecución con 64 hilos, el factor de escala vuelve a aumentar en lugar de
+disminuir, mientras que en el caso de la PC, cuando llega a 32 ejecuciones el
+factor aumenta y en la ejecución siguiente vuelve a disminuir. Claramente la
+optimización hecha por \verb|-march=native| realiza una corrección de este
+comportamiento.
+
+Cabe mencionar que antes de estas ejecuciones se realizaron pruebas con distintas
+banderas de compilación, como \verb|-O2| y \verb|-O1|, que aumentaron el tiempo
+de ejecución del programa. Debido a esto, el programa ejecutado en el cluster es
+el que mejor rendimiento obtuvo en la PC local.
 
 \section{Conclusiones}
 \label{conc}
-
-El diseño general del sistema fue claro desde el comienzo. Durante el momento
-de implementación se tuvieron problemas causados tanto por la poca expeciencia
-en el lenguaje C como en el manejo de los errores. La implementación de la cola
-de mensajes y los \emph{sockets} fueron más sencillas de lo esperado.
-
-A pesar de las dificultades, los requerimientos pedidos por la cátedra fueron
-cumplidos.
+Los requerimientos pedidos por la cátedra fueron cumplidos con éxito: el programa
+realiza la aplicación de los filtros dentro y fuera de la circunferencia del radio
+pasado como parámetro mediante paralelización con \emph{OpenMP}.
 
 
 \begin{thebibliography}{9}
-\bibitem{beejs}
-\emph{Beej's Guide to Unix IPC, Message Queues},
-\\\texttt{\href{https://beej.us/guide/bgipc/html/multi/mq.html}{Link to Message Queues}}
+\bibitem{bmpfor}
+\emph{Wikipedia, BMP file format},
+\\\texttt{\href{https://en.wikipedia.org/wiki/BMP_file_format}{Link to Wikipedia}}
 
+\bibitem{omp}
+\emph{OpenMP},
+\\\texttt{\href{https://www.openmp.org/}{Link to OpenMP}}
 
-\bibitem{replace}
-\emph{Codeforwin: Replace text in a line},
-\\\texttt{\href{https://codeforwin.org/2018/02/c-program-replace-specific-line-a-text-file.html}
-{Link to Replace text}}
+\bibitem{global}
+\emph{Nora Sandler: C compiler, Part 10},
+\\\texttt{\href{https://norasandler.com/2019/02/18/Write-a-Compiler-10.html}{Link to Global variables}}
 
+\bibitem{perfw}
+\emph{Wikipedia: perf},
+\\\texttt{\href{https://en.wikipedia.org/wiki/Perf_(Linux)}{Link to perf}}
 
-\bibitem{date}
-\emph{Stackoverflow: How to get date and time},
-\\\texttt{\href{https://stackoverflow.com/questions/1442116/how-to-get-the-date-and-time-values-in-a-c-program}
-{Lonk to Date-time}}
+\bibitem{gprofw}
+\emph{Linux Manual: gprof},
+\\\texttt{\href{https://linux.die.net/man/1/gprof}{Link to gprof}}
 
-\bibitem{seqdiag}
-\emph{Web Sequence Diagram},
-\\\texttt{\href{https://www.websequencediagrams.com/}{Web sequence diagrams}}
-
-\bibitem{filelist}
-\emph{Stackoverflow: How to list files in a directory},
-\\\texttt{\href{https://stackoverflow.com/questions/4204666/how-to-list-files-in-a-directory-in-a-c-program}{Link to list files}}
-
-\bibitem{md5}
-\emph{Stackoverflow: How to calculate MD5},
-\\\texttt{\href{https://stackoverflow.com/questions/10324611/how-to-calculate-the-md5-hash-of-a-large-file-in-c}{Link to calculate MD5}}
-
-\bibitem{md5s}
-\emph{Stackoverflow: How to show MD5 as a string},
-\\\texttt{\href{https://stackoverflow.com/questions/7627723/how-to-create-a-md5-hash-of-a-string-in-c}{Link to MD5 to string}}
+\bibitem{valpage}
+\emph{Valgrind},
+\\\texttt{\href{http://valgrind.org/}{Link to Valgrind}}
 \end{thebibliography}
 \end{document}

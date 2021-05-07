@@ -16,6 +16,7 @@ Created by jmorales on 4/22/20.
 
 #define BITMAPINFOHEADER 40
 #define TIFF_MAGIC_NUMBER ((0x4D << 8) | 0x42)
+#define PADDINGSIZE 4
 
 enum sbmp_codes {
   SBMP_ERROR_PARAM = -2,
