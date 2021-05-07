@@ -27,6 +27,8 @@ imagen _BMP_.
 
 #### Objetivo
 
+El objetivo del trabajo es lograr una visión *end to end* de una
+implementación básica de una *RESTful API* sobre un sistema embedido.
 
 ------------------
 
@@ -34,3 +36,5 @@ imagen _BMP_.
 
 #### Objetivo
 
+El objetivo del trabajo es diseñar, crear, comprobar y validar una
+aplicación de tiempo real sobre un RTOS.
