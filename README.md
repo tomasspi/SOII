@@ -38,4 +38,3 @@ implementación básica de una *RESTful API* sobre un sistema embedido.
 
 El objetivo del trabajo es diseñar, crear, comprobar y validar una
 aplicación de tiempo real sobre un RTOS.
-
